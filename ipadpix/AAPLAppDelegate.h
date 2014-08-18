@@ -11,7 +11,6 @@
 @import UIKit;
 
 @interface AAPLAppDelegate : UIResponder <UIApplicationDelegate>
-
 @property (nonatomic) UIWindow *window;
 
 @end

@@ -15,6 +15,8 @@
 
 #import "AAPLPreviewView.h"
 
+#import "GCDAsyncUdpSocket.h"
+
 
 static void *CapturingStillImageContext = &CapturingStillImageContext;
 static void *RecordingContext = &RecordingContext;
@@ -29,7 +31,9 @@ static void *ISOContext = &ISOContext;
 static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
 static void *DeviceWhiteBalanceGainsContext = &DeviceWhiteBalanceGainsContext;
 
-@interface AAPLCameraViewController () <AVCaptureFileOutputRecordingDelegate>
+@interface AAPLCameraViewController () <AVCaptureFileOutputRecordingDelegate>{
+    GCDAsyncUdpSocket *asyncSocket;
+}
 
 @property (nonatomic, weak) IBOutlet AAPLPreviewView *previewView;
 @property (nonatomic, weak) IBOutlet UIButton *recordButton;
@@ -113,10 +117,20 @@ NSTimer *focusTimer = nil;
 	return [[self session] isRunning] && [self isDeviceAuthorized];
 }
 
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    if ((self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil]))
+    {
+
+
+    }
+    return self;
+}
+
 - (void)viewDidLoad
 {
 	[super viewDidLoad];
-	
+    
 	self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	
 	self.recordButton.layer.cornerRadius = self.stillButton.layer.cornerRadius = self.cameraButton.layer.cornerRadius = 4;
@@ -269,6 +283,8 @@ NSTimer *focusTimer = nil;
 //            [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setAffineTransform:affineTransform];
 //            [CATransaction commit];
 		});
+        
+        
  
 	});
 	
@@ -276,9 +292,47 @@ NSTimer *focusTimer = nil;
 	self.manualHUDExposureView.hidden = YES;
 	self.manualHUDWhiteBalanceView.hidden = YES;
     
-
+    // Setup our socket.
+    // The socket will invoke our delegate methods using the usual delegate paradigm.
+    // However, it will invoke the delegate methods on a specified GCD delegate dispatch queue.
+    //
+    // Now we can configure the delegate dispatch queues however we want.
+    // We could simply use the main dispatch queue, so the delegate methods are invoked on the main thread.
+    // Or we could use a dedicated dispatch queue, which could be helpful if we were doing a lot of processing.
+    //
+    // The best approach for your application will depend upon convenience, requirements and performance.
+    //
+    // For this simple example, we're just going to use the main thread.
+    
+    asyncSocket = [[GCDAsyncUdpSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
+    
+    NSLog(@"socket is set up");
+    
+    NSError *error = nil;
+    
+    if (![asyncSocket bindToPort:8080 error:&error])
+    {
+        NSLog(@"Error starting server (bind): %@", error);
+        exit(1);
+    }
+    if (![asyncSocket beginReceiving:&error])
+    {
+        [asyncSocket close];
+        
+        NSLog(@"Error starting server (recv): %@", error);
+        exit(1);
+    }
+    
+    NSLog(@"Udp Echo server started on port %hu", [asyncSocket localPort]);
     
 }
+
+
+//- (void)drawRect:(CGRect)rect {
+////    CGContextRef context = UIGraphicsGetCurrentContext();
+////    //[self.view renderInContext:context];
+////    CGContextSetAllowsAntialiasing(context, false);
+//}
 
 - (void)viewWillAppear:(BOOL)animated
 {
@@ -1291,6 +1345,7 @@ NSTimer *focusTimer = nil;
             
             dispatch_async(dispatch_get_main_queue(), ^{
                 [self.view addSubview:overlayImageView];
+                
                 [[fPview layer] setOpacity:1.0];
                 [UIView animateWithDuration:.10 animations:^{
                     [fPview.layer setBorderColor:[UIColor redColor].CGColor];
@@ -1319,5 +1374,34 @@ NSTimer *focusTimer = nil;
                                                      repeats:NO];
     }
 }
+
+- (void)udpSocket:(GCDAsyncUdpSocket *)sock didReceiveData:(NSData *)data
+      fromAddress:(NSData *)address
+withFilterContext:(id)filterContext
+{
+    NSLog (@"got somethin");
+    
+    NSString *msg = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    if (msg)
+    {
+        /* If you want to get a display friendly version of the IPv4 or IPv6 address, you could do this:
+         
+         NSString *host = nil;
+         uint16_t port = 0;
+         [GCDAsyncUdpSocket getHost:&host port:&port fromAddress:address];
+         
+         */
+        
+        NSLog (@"Msg: %@",msg);
+    }
+    else
+    {
+        NSLog(@"Error converting received data into UTF-8 String");
+    }
+    
+    [asyncSocket sendData:data toAddress:address withTimeout:-1 tag:0];
+    NSLog (@"send message back");
+}
+
 
 @end
