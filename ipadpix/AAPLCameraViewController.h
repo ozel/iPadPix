@@ -9,6 +9,8 @@
 */
 
 @import UIKit;
+#import "RSFrameBufferLayer.h"
+
 
 
 CGPoint focusPOI;
@@ -17,6 +19,8 @@ UIView *fPview;
 
 @interface AAPLCameraViewController : UIViewController
 @property (nonatomic) CGRect focusPointer;
+@property (nonatomic) RSFrameBufferLayer * fBuffer;
+@property (nonatomic) UIImageView * overlayImageView;
 
 
 
