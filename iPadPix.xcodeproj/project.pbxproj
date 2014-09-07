@@ -27,6 +27,7 @@
 		B854782C19A23CC600289564 /* 7_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782219A23CC600289564 /* 7_.png */; };
 		B854782D19A23CC600289564 /* 8_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782319A23CC600289564 /* 8_.png */; };
 		B854782E19A23CC600289564 /* 9_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782419A23CC600289564 /* 9_.png */; };
+		B89EC9EC19B0D81400185BB3 /* tpx_schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B89EC9EB19B0D81400185BB3 /* tpx_schema.json */; };
 		B8F30AFA19A4C9DB0007B8C2 /* RSFrameBufferLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AF919A4C9DB0007B8C2 /* RSFrameBufferLayer.m */; };
 		B8F30B1119A631A70007B8C2 /* DDAbstractDatabaseLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AFF19A631A70007B8C2 /* DDAbstractDatabaseLogger.m */; };
 		B8F30B1219A631A70007B8C2 /* DDASLLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30B0119A631A70007B8C2 /* DDASLLogger.m */; };
@@ -37,9 +38,11 @@
 		B8F30B1719A631A70007B8C2 /* DDDispatchQueueLogFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30B0D19A631A70007B8C2 /* DDDispatchQueueLogFormatter.m */; };
 		B8F30B1819A631A70007B8C2 /* DDMultiFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30B0F19A631A70007B8C2 /* DDMultiFormatter.m */; };
 		B8F30B1919A631A70007B8C2 /* README.txt in Resources */ = {isa = PBXBuildFile; fileRef = B8F30B1019A631A70007B8C2 /* README.txt */; };
+		FA4C9C6B8D794EEA9B1148E7 /* libPods-iPadPix.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1274F35A7BC44D449712D09C /* libPods-iPadPix.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1274F35A7BC44D449712D09C /* libPods-iPadPix.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-iPadPix.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F360BA217692C4700D9A404 /* iPadPix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iPadPix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B854753419A2399C00289564 /* AAPLAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AAPLAppDelegate.h; sourceTree = "<group>"; };
 		B854753519A2399C00289564 /* AAPLAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AAPLAppDelegate.m; sourceTree = "<group>"; };
@@ -69,6 +72,7 @@
 		B854782319A23CC600289564 /* 8_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 8_.png; sourceTree = "<group>"; };
 		B854782419A23CC600289564 /* 9_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 9_.png; sourceTree = "<group>"; };
 		B854782F19A23E6E00289564 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		B89EC9EB19B0D81400185BB3 /* tpx_schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = tpx_schema.json; sourceTree = "<group>"; };
 		B8F30AF919A4C9DB0007B8C2 /* RSFrameBufferLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RSFrameBufferLayer.m; sourceTree = "<group>"; };
 		B8F30AFC19A4CA230007B8C2 /* RSFrameBufferLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RSFrameBufferLayer.h; sourceTree = "<group>"; };
 		B8F30AFE19A631A70007B8C2 /* DDAbstractDatabaseLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDAbstractDatabaseLogger.h; sourceTree = "<group>"; };
@@ -89,7 +93,19 @@
 		B8F30B0E19A631A70007B8C2 /* DDMultiFormatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDMultiFormatter.h; sourceTree = "<group>"; };
 		B8F30B0F19A631A70007B8C2 /* DDMultiFormatter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DDMultiFormatter.m; sourceTree = "<group>"; };
 		B8F30B1019A631A70007B8C2 /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		FA4E86DCCD4847F88750BDB3 /* Pods-iPadPix.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iPadPix.xcconfig"; path = "Pods/Pods-iPadPix.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7A00B62AF1AB417D8A0279F4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA4C9C6B8D794EEA9B1148E7 /* libPods-iPadPix.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		2F360B9917692C4700D9A404 = {
@@ -100,6 +116,8 @@
 				B854768619A23AC900289564 /* GCD */,
 				B854753319A2399C00289564 /* ipadpix */,
 				2F360BA317692C4700D9A404 /* Products */,
+				FA4E86DCCD4847F88750BDB3 /* Pods-iPadPix.xcconfig */,
+				7AC3E11AFE7643B38487F976 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -109,6 +127,14 @@
 				2F360BA217692C4700D9A404 /* iPadPix.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		7AC3E11AFE7643B38487F976 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1274F35A7BC44D449712D09C /* libPods-iPadPix.a */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		B854753319A2399C00289564 /* ipadpix */ = {
@@ -130,6 +156,7 @@
 				B854754019A2399C00289564 /* Images.xcassets */,
 				B854754119A2399C00289564 /* iPadPix-Info.plist */,
 				B854754219A2399C00289564 /* main.m */,
+				B89EC9EB19B0D81400185BB3 /* tpx_schema.json */,
 			);
 			path = ipadpix;
 			sourceTree = "<group>";
@@ -203,8 +230,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2F360BD717692C4700D9A404 /* Build configuration list for PBXNativeTarget "iPadPix" */;
 			buildPhases = (
+				7DCC9A54769946628AE4E808 /* Check Pods Manifest.lock */,
 				2F360B9E17692C4700D9A404 /* Sources */,
 				2F360BA017692C4700D9A404 /* Resources */,
+				7A00B62AF1AB417D8A0279F4 /* Frameworks */,
+				7223413F22854ACB81641DC3 /* Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -266,6 +296,7 @@
 				B854782C19A23CC600289564 /* 7_.png in Resources */,
 				B854782819A23CC600289564 /* 3_.png in Resources */,
 				B854782619A23CC600289564 /* 1_.png in Resources */,
+				B89EC9EC19B0D81400185BB3 /* tpx_schema.json in Resources */,
 				B854782A19A23CC600289564 /* 5_.png in Resources */,
 				B854754619A2399C00289564 /* Main.storyboard in Resources */,
 				B854782919A23CC600289564 /* 4_.png in Resources */,
@@ -277,6 +308,39 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		7223413F22854ACB81641DC3 /* Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Pods-iPadPix-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		7DCC9A54769946628AE4E808 /* Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		2F360B9E17692C4700D9A404 /* Sources */ = {
@@ -398,6 +462,7 @@
 		};
 		2F360BD817692C4700D9A404 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FA4E86DCCD4847F88750BDB3 /* Pods-iPadPix.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
@@ -414,6 +479,7 @@
 		};
 		2F360BD917692C4700D9A404 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FA4E86DCCD4847F88750BDB3 /* Pods-iPadPix.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;

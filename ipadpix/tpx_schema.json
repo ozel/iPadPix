@@ -1,0 +1,21 @@
+{ "name": "tpxFrame",
+  "type": "record",
+  "fields":[ {
+ 			"name": "clusterArray",
+ 			"type": {
+ 				"type": "array", 
+ 				"items": {
+       					"name": "Cluster",
+       					"type": "record",
+       					"fields" : [
+                                    {"name": "id", "type": "int"},
+                                    {"name": "energy", "type": "float"},
+                                    {"name": "xi", "type": "bytes"},
+                                    {"name": "yi", "type": "bytes"},
+                                    {"name": "ei", "type": "bytes"}
+              			]
+				}
+       		}
+    	}
+    ] 
+}

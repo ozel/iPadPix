@@ -20,6 +20,9 @@
 #import "DDTTYLogger.h"
 #import "RSFrameBufferLayer.h"
 
+#import <ObjectiveAvro/OAVAvroSerialization.h>
+
+
 
 static void *CapturingStillImageContext = &CapturingStillImageContext;
 static void *RecordingContext = &RecordingContext;
@@ -71,6 +74,23 @@ dispatch_queue_t networkQueue;
 @synthesize fBuffer;
 @synthesize overlayImageView;
 
++ (id)JSONObjectFromBundleResource:(NSString *)resource {
+    NSString *path = [[NSBundle bundleForClass:self] pathForResource:resource ofType:@"json"];
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    
+    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+    return dict;
+}
+
++ (id)stringFromBundleResource:(NSString *)resource {
+    NSString *path = [[NSBundle bundleForClass:self] pathForResource:resource ofType:@"json"];
+    return [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
+}
+
+- (void)registerSchemas:(OAVAvroSerialization *)avro {
+    NSString *tpxFrame = [[self class] stringFromBundleResource:@"tpx_schema"];
+    [avro registerSchema:tpxFrame error:NULL];
+}
 
 + (void)initialize
 {
@@ -120,43 +140,46 @@ dispatch_queue_t networkQueue;
 		
 		NSError *error = nil;
 		
-		AVCaptureDevice *videoDevice = [AAPLCameraViewController deviceWithMediaType:AVMediaTypeVideo preferringPosition:AVCaptureDevicePositionBack];
-		AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
-		
-		if (error)
-		{
-			NSLog(@"%@", error);
-		}
-		
-		[[self session] beginConfiguration];
-		
-		if ([session canAddInput:videoDeviceInput])
-		{
-			[session addInput:videoDeviceInput];
-			[self setVideoDeviceInput:videoDeviceInput];
-			[self setVideoDevice:videoDeviceInput.device];
-			
-			dispatch_async(dispatch_get_main_queue(), ^{
-				// Why are we dispatching this to the main queue?
-				// Because AVCaptureVideoPreviewLayer is the backing layer for our preview view and UIView can only be manipulated on main thread.
-				// Note: As an exception to the above rule, it is not necessary to serialize video orientation changes on the AVCaptureVideoPreviewLayer’s connection with other session manipulation.
-  
-				[[(AVCaptureVideoPreviewLayer *)[[self previewView] layer] connection] setVideoOrientation:AVCaptureVideoOrientationLandscapeRight];
-			});
-		}
-        
-        [self setLockInterfaceRotation:YES];
-		
-		if (error)
-		{
-			NSLog(@"%@", error);
-		}
-		
-	
-		[[self session] commitConfiguration];
-        
-        NSLog(@"%@", [[self session] sessionPreset]);
-        
+        if(!TARGET_IPHONE_SIMULATOR){
+            
+            AVCaptureDevice *videoDevice = [AAPLCameraViewController deviceWithMediaType:AVMediaTypeVideo preferringPosition:AVCaptureDevicePositionBack];
+            AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
+            
+            if (error)
+            {
+                NSLog(@"%@", error);
+            }
+            
+            [[self session] beginConfiguration];
+            
+            if ([session canAddInput:videoDeviceInput])
+            {
+                [session addInput:videoDeviceInput];
+                [self setVideoDeviceInput:videoDeviceInput];
+                [self setVideoDevice:videoDeviceInput.device];
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    // Why are we dispatching this to the main queue?
+                    // Because AVCaptureVideoPreviewLayer is the backing layer for our preview view and UIView can only be manipulated on main thread.
+                    // Note: As an exception to the above rule, it is not necessary to serialize video orientation changes on the AVCaptureVideoPreviewLayer’s connection with other session manipulation.
+
+                    [[(AVCaptureVideoPreviewLayer *)[[self previewView] layer] connection] setVideoOrientation:AVCaptureVideoOrientationLandscapeRight];
+                });
+            }
+            
+            [self setLockInterfaceRotation:YES];
+            
+            if (error)
+            {
+                NSLog(@"%@", error);
+            }
+            
+
+            [[self session] commitConfiguration];
+            
+            NSLog(@"%@", [[self session] sessionPreset]);
+            
+        }
 		
         CGRect screenRect = [[UIScreen mainScreen] bounds];
         double screenWidth = screenRect.size.width;
@@ -168,7 +191,8 @@ dispatch_queue_t networkQueue;
         
         //configure video display size and exposure mode
         
-        if ([self.videoDevice lockForConfiguration:&error]) {
+        
+        if (!TARGET_IPHONE_SIMULATOR && [self.videoDevice lockForConfiguration:&error]) {
             [self.videoDevice setFocusPointOfInterest:defaultFocusPOI];
             //[self.videoDevice videoZoomFactor:2.0];
             if ([self.videoDevice respondsToSelector:@selector(setVideoZoomFactor:)]) {
@@ -183,7 +207,7 @@ dispatch_queue_t networkQueue;
         }
         else
         {
-            NSLog(@"%@", error);
+            NSLog(@"simulator mode or error: %@", error);
         }
         
   
@@ -270,19 +294,20 @@ dispatch_queue_t networkQueue;
 - (void)viewWillAppear:(BOOL)animated
 {
 	[super viewWillAppear:animated];
-	
-	dispatch_async([self sessionQueue], ^{
-		[self addObservers];
-		
-		[[self session] startRunning];
-	});
+    if(!TARGET_IPHONE_SIMULATOR){
+        dispatch_async([self sessionQueue], ^{
+            [self addObservers];
+            [[self session] startRunning];
+        });
+    }
 }
 
 - (void)viewDidDisappear:(BOOL)animated
 {
 	dispatch_async([self sessionQueue], ^{
-		[[self session] stopRunning];
-		
+        if(!TARGET_IPHONE_SIMULATOR){
+            [[self session] stopRunning];
+        }
 		[self removeObservers];
 	});
 	
@@ -458,32 +483,34 @@ dispatch_queue_t networkQueue;
 - (void)focusWithMode:(AVCaptureFocusMode)focusMode exposeWithMode:(AVCaptureExposureMode)exposureMode atDevicePoint:(CGPoint)point monitorSubjectAreaChange:(BOOL)monitorSubjectAreaChange
 {
 	dispatch_async([self sessionQueue], ^{
-		AVCaptureDevice *device = [self videoDevice];
-		NSError *error = nil;
-		if ([device lockForConfiguration:&error])
-		{
-			if ([device isFocusPointOfInterestSupported] && [device isFocusModeSupported:focusMode])
-			{
-				[device setFocusMode:focusMode];
-				[device setFocusPointOfInterest:point];
-			}
-			if ([device isExposurePointOfInterestSupported] && [device isExposureModeSupported:exposureMode])
-			{
-				[device setExposureMode:exposureMode];
-				[device setExposurePointOfInterest:point];
-			}
-            if ([device respondsToSelector:@selector(isAutoFocusRangeRestrictionSupported)] && device.autoFocusRangeRestrictionSupported) {
-                // If we are on an iOS version that supports AutoFocusRangeRestriction and the device supports it
-                // Set the focus range to "near"
-                device.autoFocusRangeRestriction = AVCaptureAutoFocusRangeRestrictionNear;
+        if(!TARGET_IPHONE_SIMULATOR){
+            AVCaptureDevice *device = [self videoDevice];
+            NSError *error = nil;
+            if ([device lockForConfiguration:&error])
+            {
+                if ([device isFocusPointOfInterestSupported] && [device isFocusModeSupported:focusMode])
+                {
+                    [device setFocusMode:focusMode];
+                    [device setFocusPointOfInterest:point];
+                }
+                if ([device isExposurePointOfInterestSupported] && [device isExposureModeSupported:exposureMode])
+                {
+                    [device setExposureMode:exposureMode];
+                    [device setExposurePointOfInterest:point];
+                }
+                if ([device respondsToSelector:@selector(isAutoFocusRangeRestrictionSupported)] && device.autoFocusRangeRestrictionSupported) {
+                    // If we are on an iOS version that supports AutoFocusRangeRestriction and the device supports it
+                    // Set the focus range to "near"
+                    device.autoFocusRangeRestriction = AVCaptureAutoFocusRangeRestrictionNear;
+                }
+                [device setSubjectAreaChangeMonitoringEnabled:monitorSubjectAreaChange];
+                [device unlockForConfiguration];
             }
-			[device setSubjectAreaChangeMonitoringEnabled:monitorSubjectAreaChange];
-			[device unlockForConfiguration];
-		}
-		else
-		{
-			NSLog(@"%@", error);
-		}
+            else
+            {
+                NSLog(@"%@", error);
+            }
+        }
 	});
 }
 
@@ -503,13 +530,15 @@ dispatch_queue_t networkQueue;
                                                  name:@"UIApplicationDidRefocusEvent" object:nil];
 	
 	__weak AAPLCameraViewController *weakSelf = self;
-	[self setRuntimeErrorHandlingObserver:[[NSNotificationCenter defaultCenter] addObserverForName:AVCaptureSessionRuntimeErrorNotification object:[self session] queue:nil usingBlock:^(NSNotification *note) {
-		AAPLCameraViewController *strongSelf = weakSelf;
-		dispatch_async([strongSelf sessionQueue], ^{
-			// Manually restart the session since it must have been stopped due to an error
-			[[strongSelf session] startRunning];
-		});
-	}]];
+    if(!TARGET_IPHONE_SIMULATOR){
+        [self setRuntimeErrorHandlingObserver:[[NSNotificationCenter defaultCenter] addObserverForName:AVCaptureSessionRuntimeErrorNotification object:[self session] queue:nil usingBlock:^(NSNotification *note) {
+            AAPLCameraViewController *strongSelf = weakSelf;
+            dispatch_async([strongSelf sessionQueue], ^{
+                // Manually restart the session since it must have been stopped due to an error
+                [[strongSelf session] startRunning];
+            });
+        }]];
+    }
 }
 
 - (void)removeObservers
@@ -796,64 +825,94 @@ dispatch_queue_t networkQueue;
 withFilterContext:(id)filterContext
 {
     BOOL new_frame = false;
-    NSLog (@"got somethin");
     
-    NSString *msg = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    if (msg)
-    {
-        /* If you want to get a display friendly version of the IPv4 or IPv6 address, you could do this:
-       
-         NSString *host = nil;
-         uint16_t port = 0;
-         [GCDAsyncUdpSocket getHost:&host port:&port fromAddress:address];
-         
-         */
-        
-//       NSLog (@"Msg: %@",msg);
-    }
-    else
-    {
-        NSLog(@"Error converting received data into UTF-8 String");
-    }
-    
-    NSArray *lines = [msg componentsSeparatedByString:@"\n"];
-    
-//    NSLog(@"pixels: %@",lines);
-    
-//    if([lines count] > 0){
-//        new_hits = true;
-//    }
+    OAVAvroSerialization *avro = [[OAVAvroSerialization alloc] init];
+    NSError *error;
+    [self registerSchemas:avro];
+    NSDictionary *fromAvro = [avro JSONObjectFromData:data forSchemaNamed:@"tpxFrame" error:&error];
+    if (!error) {
+//    NSLog (@"%@",fromAvro);
+        NSLog (@"got avro clusters");
 
-    for(NSString * line in lines){
-        if([line length] != 0){
-            if([line isEqualToString:@"new frame:"]){
-                new_frame = true;
-                break;
-            }
+        
+        NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];
+        const unsigned char * xi = (const unsigned char*) [[[clusters objectAtIndex:0] valueForKey:@"xi"] UTF8String];
+        const unsigned char * yi = (const unsigned char*) [[[clusters objectAtIndex:0] valueForKey:@"yi"] UTF8String];
+        const unsigned char * ei = (const unsigned char*) [[[clusters objectAtIndex:0] valueForKey:@"ei"] UTF8String];
+        int cluster_size = (int) [[[clusters objectAtIndex:0] valueForKey:@"ei"] length];
+        
+        //number of clusters
+        NSLog (@"%i",(int)[clusters count]);
+        
+        for (int i=0; i < cluster_size; i++) {
+            NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
+
+        }
+        NSLog (@"%@",[[clusters objectAtIndex:0] valueForKey:@"energy"]);
+    } else {
+
+        NSLog (@"got raw frame");
+
+        //NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
+
+        NSString *msg = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        if (msg)
+        {
+            /* If you want to get a display friendly version of the IPv4 or IPv6 address, you could do this:
+           
+             NSString *host = nil;
+             uint16_t port = 0;
+             [GCDAsyncUdpSocket getHost:&host port:&port fromAddress:address];
+             
+             */
             
+    //       NSLog (@"Msg: %@",msg);
+        }
+        else
+        {
+            NSLog(@"Error converting received data into UTF-8 String");
+        }
+        
+        NSArray *lines = [msg componentsSeparatedByString:@"\n"];
+        
+    //    NSLog(@"pixels: %@",lines);
+        
+    //    if([lines count] > 0){
+    //        new_hits = true;
+    //    }
+
+        for(NSString * line in lines){
+            if([line length] != 0){
+                if([line isEqualToString:@"new frame:"]){
+                    new_frame = true;
+                    break;
+                    
+                }
                 
-            NSArray *d = [line componentsSeparatedByString:@"\t"];
-//            NSLog(@"pixels: %@",d);
-            if ([d count] == 3){
-                [fBuffer setPixelWithX:[d[0] intValue] y:[d[1] intValue] counts:[d[2] intValue]];
-//                NSLog(@"%08x TOT:%i",fBuffer.framebuffer[ ([d[1] intValue] * 255) + [d[0] intValue]], [d[2] intValue]);
+                    
+                NSArray *d = [line componentsSeparatedByString:@"\t"];
+    //            NSLog(@"pixels: %@",d);
+                if ([d count] == 3){
+                    [fBuffer setPixelWithX:[d[0] intValue] y:[d[1] intValue] counts:[d[2] intValue]];
+    //                NSLog(@"%08x TOT:%i",fBuffer.framebuffer[ ([d[1] intValue] * 255) + [d[0] intValue]], [d[2] intValue]);
+                }
             }
         }
-    }
 
-    if(new_frame){
-        NSLog (@"Draw new frame");
+        if(new_frame){
+            NSLog (@"Draw new frame");
 
-      
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [fBuffer blit];
-            focusTimer = [NSTimer scheduledTimerWithTimeInterval:0
-                                                  target:self
-                                                selector:@selector(handleFPtimer:)
-                                                userInfo:nil
-                                                 repeats:NO];
-        });
+          
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [fBuffer blit];
+                focusTimer = [NSTimer scheduledTimerWithTimeInterval:0
+                                                      target:self
+                                                    selector:@selector(handleFPtimer:)
+                                                    userInfo:nil
+                                                     repeats:NO];
+            });
 
+        }
     }
 
 }
