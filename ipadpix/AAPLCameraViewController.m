@@ -18,7 +18,7 @@
 #import "GCDAsyncUdpSocket.h"
 #import "DDLog.h"
 #import "DDTTYLogger.h"
-#import "RSFrameBufferLayer.h"
+#import "TPXFrameBufferLayer.h"
 
 #import <ObjectiveAvro/OAVAvroSerialization.h>
 
@@ -221,7 +221,7 @@ dispatch_queue_t networkQueue;
         fPview.frame = r;
         overlayImageView = [[UIImageView alloc] initWithFrame:focusPointer];
         
-        fBuffer = [RSFrameBufferLayer paletteLayerWithFrame:CGRectMake(0, 0, 255, 255)];
+        fBuffer = [TPXFrameBufferLayer paletteLayerWithFrame:CGRectMake(0, 0, 255, 255)];
         
         //fPview.backgroundColor = UIColor.redColor; //
         fPview.backgroundColor = UIColor.clearColor; //
@@ -833,6 +833,7 @@ withFilterContext:(id)filterContext
     if (!error) {
 //    NSLog (@"%@",fromAvro);
         NSLog (@"got avro clusters");
+        NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
 
         
         NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];

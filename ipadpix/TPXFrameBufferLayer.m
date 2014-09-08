@@ -1,5 +1,5 @@
 //
-//  RSFrameBufferLayer.m
+//  TPXFrameBufferLayer.m
 //  iPadPix
 //
 //  Created by Oliver Keller on 20.08.14.
@@ -8,9 +8,9 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIColor.h>
-#import "RSFrameBufferLayer.h"
+#import "TPXFrameBufferLayer.h"
 
-@implementation RSFrameBufferLayer
+@implementation TPXFrameBufferLayer
 @synthesize context = _context;
 
 #define MAX_COLORS 256
@@ -26,7 +26,7 @@ uint32_t * framebuffer;
 int localFrameWidth;
 int localFrameHeight;
 
-+ (RSFrameBufferLayer *)paletteLayerWithFrame:(CGRect)frame
++ (TPXFrameBufferLayer *)paletteLayerWithFrame:(CGRect)frame
 {
     //init color palette
     //based on HOT palette from mafalda/MPXViewer/MPXViewer.cpp
@@ -52,7 +52,7 @@ int localFrameHeight;
         ((int)floor(green*255.0)) << (1*8) |
         ((int)floor(blue *255.0));
     }
-    return [[RSFrameBufferLayer alloc] initWithFrame:frame];
+    return [[TPXFrameBufferLayer alloc] initWithFrame:frame];
     
 }
 

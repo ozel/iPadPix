@@ -28,7 +28,7 @@
 		B854782D19A23CC600289564 /* 8_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782319A23CC600289564 /* 8_.png */; };
 		B854782E19A23CC600289564 /* 9_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782419A23CC600289564 /* 9_.png */; };
 		B89EC9EC19B0D81400185BB3 /* tpx_schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B89EC9EB19B0D81400185BB3 /* tpx_schema.json */; };
-		B8F30AFA19A4C9DB0007B8C2 /* RSFrameBufferLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AF919A4C9DB0007B8C2 /* RSFrameBufferLayer.m */; };
+		B8F30AFA19A4C9DB0007B8C2 /* TPXFrameBufferLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */; };
 		B8F30B1119A631A70007B8C2 /* DDAbstractDatabaseLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AFF19A631A70007B8C2 /* DDAbstractDatabaseLogger.m */; };
 		B8F30B1219A631A70007B8C2 /* DDASLLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30B0119A631A70007B8C2 /* DDASLLogger.m */; };
 		B8F30B1319A631A70007B8C2 /* DDFileLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30B0319A631A70007B8C2 /* DDFileLogger.m */; };
@@ -73,8 +73,8 @@
 		B854782419A23CC600289564 /* 9_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 9_.png; sourceTree = "<group>"; };
 		B854782F19A23E6E00289564 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B89EC9EB19B0D81400185BB3 /* tpx_schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = tpx_schema.json; sourceTree = "<group>"; };
-		B8F30AF919A4C9DB0007B8C2 /* RSFrameBufferLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RSFrameBufferLayer.m; sourceTree = "<group>"; };
-		B8F30AFC19A4CA230007B8C2 /* RSFrameBufferLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RSFrameBufferLayer.h; sourceTree = "<group>"; };
+		B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPXFrameBufferLayer.m; sourceTree = "<group>"; };
+		B8F30AFC19A4CA230007B8C2 /* TPXFrameBufferLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TPXFrameBufferLayer.h; sourceTree = "<group>"; };
 		B8F30AFE19A631A70007B8C2 /* DDAbstractDatabaseLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDAbstractDatabaseLogger.h; sourceTree = "<group>"; };
 		B8F30AFF19A631A70007B8C2 /* DDAbstractDatabaseLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DDAbstractDatabaseLogger.m; sourceTree = "<group>"; };
 		B8F30B0019A631A70007B8C2 /* DDASLLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDASLLogger.h; sourceTree = "<group>"; };
@@ -147,8 +147,8 @@
 				B854753719A2399C00289564 /* AAPLCameraViewController.m */,
 				B854753819A2399C00289564 /* AAPLPreviewView.h */,
 				B854753919A2399C00289564 /* AAPLPreviewView.m */,
-				B8F30AF919A4C9DB0007B8C2 /* RSFrameBufferLayer.m */,
-				B8F30AFC19A4CA230007B8C2 /* RSFrameBufferLayer.h */,
+				B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */,
+				B8F30AFC19A4CA230007B8C2 /* TPXFrameBufferLayer.h */,
 				B854753A19A2399C00289564 /* Main.storyboard */,
 				B854753C19A2399C00289564 /* CameraFocusSquare.h */,
 				B854753D19A2399C00289564 /* CameraFocusSquare.m */,
@@ -360,7 +360,7 @@
 				B854754B19A2399C00289564 /* main.m in Sources */,
 				B8F30B1619A631A70007B8C2 /* DDContextFilterLogFormatter.m in Sources */,
 				B8F30B1119A631A70007B8C2 /* DDAbstractDatabaseLogger.m in Sources */,
-				B8F30AFA19A4C9DB0007B8C2 /* RSFrameBufferLayer.m in Sources */,
+				B8F30AFA19A4C9DB0007B8C2 /* TPXFrameBufferLayer.m in Sources */,
 				B854776919A23ACA00289564 /* GCDAsyncSocket.m in Sources */,
 				B854754419A2399C00289564 /* AAPLCameraViewController.m in Sources */,
 			);

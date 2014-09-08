@@ -9,7 +9,7 @@
 */
 
 @import UIKit;
-#import "RSFrameBufferLayer.h"
+#import "TPXFrameBufferLayer.h"
 
 
 
@@ -19,7 +19,7 @@ UIView *fPview;
 
 @interface AAPLCameraViewController : UIViewController
 @property (nonatomic) CGRect focusPointer;
-@property (nonatomic) RSFrameBufferLayer * fBuffer;
+@property (nonatomic) TPXFrameBufferLayer * fBuffer;
 @property (nonatomic) UIImageView * overlayImageView;
 
 

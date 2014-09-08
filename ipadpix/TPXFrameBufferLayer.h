@@ -1,5 +1,5 @@
 //
-//  RSFrameBufferLayer.h
+//  TPXFrameBufferLayer.h
 //  iPadPix
 //
 //  Created by Oliver Keller on 20.08.14.
@@ -9,11 +9,11 @@
 #import <QuartzCore/QuartzCore.h>
 #import <stdint.h>
 
-@interface RSFrameBufferLayer : CALayer
+@interface TPXFrameBufferLayer : CALayer
 
 // Class method to create a new layer with an underlying
 // bitmap. Both will have the size set by the frame
-+ (RSFrameBufferLayer *)paletteLayerWithFrame:(CGRect)frame;
++ (TPXFrameBufferLayer *)paletteLayerWithFrame:(CGRect)frame;
 // Same as above
 - (id)initWithFrame:(CGRect)frame;
 

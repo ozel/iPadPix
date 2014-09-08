@@ -10,6 +10,8 @@
        					"fields" : [
                                     {"name": "id", "type": "int"},
                                     {"name": "energy", "type": "float"},
+                                    {"name": "center_x", "type": "float"},
+                                    {"name": "center_y", "type": "float"},
                                     {"name": "xi", "type": "bytes"},
                                     {"name": "yi", "type": "bytes"},
                                     {"name": "ei", "type": "bytes"}
