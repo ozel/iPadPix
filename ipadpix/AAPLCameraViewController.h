@@ -20,6 +20,7 @@ UIView *fPview;
 @interface AAPLCameraViewController : UIViewController
 @property (nonatomic) CGRect focusPointer;
 @property (nonatomic) TPXFrameBufferLayer * fBuffer;
+@property (nonatomic) NSMutableArray * fbArray;
 @property (nonatomic) UIImageView * overlayImageView;
 
 

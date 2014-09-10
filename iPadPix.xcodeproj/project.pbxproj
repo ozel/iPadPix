@@ -73,6 +73,7 @@
 		B854782419A23CC600289564 /* 9_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 9_.png; sourceTree = "<group>"; };
 		B854782F19A23E6E00289564 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B89EC9EB19B0D81400185BB3 /* tpx_schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = tpx_schema.json; sourceTree = "<group>"; };
+		B8E8BD4619C0B820001F2797 /* ColorSpaceUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ColorSpaceUtilities.h; sourceTree = "<group>"; };
 		B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPXFrameBufferLayer.m; sourceTree = "<group>"; };
 		B8F30AFC19A4CA230007B8C2 /* TPXFrameBufferLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TPXFrameBufferLayer.h; sourceTree = "<group>"; };
 		B8F30AFE19A631A70007B8C2 /* DDAbstractDatabaseLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDAbstractDatabaseLogger.h; sourceTree = "<group>"; };
@@ -149,6 +150,7 @@
 				B854753919A2399C00289564 /* AAPLPreviewView.m */,
 				B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */,
 				B8F30AFC19A4CA230007B8C2 /* TPXFrameBufferLayer.h */,
+				B8E8BD4619C0B820001F2797 /* ColorSpaceUtilities.h */,
 				B854753A19A2399C00289564 /* Main.storyboard */,
 				B854753C19A2399C00289564 /* CameraFocusSquare.h */,
 				B854753D19A2399C00289564 /* CameraFocusSquare.m */,

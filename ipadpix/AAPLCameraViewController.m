@@ -73,6 +73,7 @@ dispatch_queue_t networkQueue;
 @synthesize focusPointer;
 @synthesize fBuffer;
 @synthesize overlayImageView;
+@synthesize fbArray;
 
 + (id)JSONObjectFromBundleResource:(NSString *)resource {
     NSString *path = [[NSBundle bundleForClass:self] pathForResource:resource ofType:@"json"];
@@ -211,7 +212,7 @@ dispatch_queue_t networkQueue;
         }
         
   
-        focusPointer = CGRectMake(0.0, 0.0, 100.0, 100.0);
+        focusPointer = CGRectMake(0.0, 0.0, 255, 255); //was 100, 100
        
         fPview = [[UIView alloc] initWithFrame:focusPointer];
         CGRect r = focusPointer;
@@ -221,7 +222,11 @@ dispatch_queue_t networkQueue;
         fPview.frame = r;
         overlayImageView = [[UIImageView alloc] initWithFrame:focusPointer];
         
-        fBuffer = [TPXFrameBufferLayer paletteLayerWithFrame:CGRectMake(0, 0, 255, 255)];
+
+                
+        fBuffer = [TPXFrameBufferLayer createLayerWithFrame:CGRectMake(0, 0, 255, 255) Index:999];
+        fbArray = [NSMutableArray initTPXFrameBuffersWithParentLayer:overlayImageView.layer];
+
         
         //fPview.backgroundColor = UIColor.redColor; //
         fPview.backgroundColor = UIColor.clearColor; //
@@ -232,6 +237,7 @@ dispatch_queue_t networkQueue;
 
         
         [[fPview layer] setOpacity:0.5];
+
 		
         dispatch_async(dispatch_get_main_queue(), ^{
 			[self configureManualHUD];
@@ -829,44 +835,89 @@ withFilterContext:(id)filterContext
     OAVAvroSerialization *avro = [[OAVAvroSerialization alloc] init];
     NSError *error;
     [self registerSchemas:avro];
-    NSDictionary *fromAvro = [avro JSONObjectFromData:data forSchemaNamed:@"tpxFrame" error:&error];
+
+    // the json object returns the opriginal Avro bytes as UTF8 strings, this means numbers > 194 are stored in two bytes
+    // and any zero bytes terminate the string early
+    // TODO: enable of parsing xi and yi zero values, ei should be never zero
+    NSData *fromAvro = [avro JSONObjectFromData:data forSchemaNamed:@"tpxFrame" error:&error] ;
     if (!error) {
 //    NSLog (@"%@",fromAvro);
-        NSLog (@"got avro clusters");
-        NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
-
-        
+//        NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
+      
         NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];
-        const unsigned char * xi = (const unsigned char*) [[[clusters objectAtIndex:0] valueForKey:@"xi"] UTF8String];
-        const unsigned char * yi = (const unsigned char*) [[[clusters objectAtIndex:0] valueForKey:@"yi"] UTF8String];
-        const unsigned char * ei = (const unsigned char*) [[[clusters objectAtIndex:0] valueForKey:@"ei"] UTF8String];
-        int cluster_size = (int) [[[clusters objectAtIndex:0] valueForKey:@"ei"] length];
-        
-        //number of clusters
-        NSLog (@"%i",(int)[clusters count]);
-        
-        for (int i=0; i < cluster_size; i++) {
-            NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
+        int counts = (int)[clusters count];
+        NSLog (@"got %i avro clusters", counts);
 
+        NSDictionary * cluster;
+     
+       
+        for (cluster in clusters) {
+            // UTF8 string length is in bytes and thus missleading if there are composed characters,
+            // therefore we have to extract the number of composed characters with this custom category function
+            int xdata = (int) [[cluster valueForKey:@"xi"] getNumberOfCharacters];
+            int ydata = (int) [[cluster valueForKey:@"yi"] getNumberOfCharacters];
+            int edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
+            int clusterSize = xdata;
+            if(xdata != ydata && xdata != edata && ydata != edata){
+                NSLog(@"WARNING: non equal byte length ------------------------");
+            }
+        
+            float centerX = [[cluster valueForKey:@"center_x"] floatValue];
+            float centerY = [[cluster valueForKey:@"center_y"] floatValue];
+            NSLog (@"clusterTOT: %@ size: %i centerx: %f centery: %f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
+//            NSLog(@"size xi: %i size yi: %i, size ei: %i ",xdata,ydata,edata);
+
+//            NSData * test = [cluster valueForKey:@"yi"];
+//            NSData * test = [NSKeyedArchiver archivedDataWithRootObject:[cluster valueForKey:@"yi"]];
+//            uint8_t * bytePtr = (uint8_t  * )[test bytes];
+//              unichar bytePtr[clusterSize];
+//              [[cluster valueForKey:@"yi"] getCharacters:bytePtr range:NSMakeRange(0, [[cluster valueForKey:@"yi"] length])];
+//              NSInteger totalData = clusterSize;
+//            NSInteger totalData = [test length] / sizeof(uint8_t);
+//              for (int i = 0 ; i < totalData; i ++)
+//              {
+//                  NSLog(@"data byte chunk : %x", bytePtr[i]);
+//              }
+//            NSLog(@"test length: %i", totalData);
+
+//            NSData* test = [[[cluster valueForKey:@"xi"] dataUsingEncoding:NSASCIIStringEncoding];
+//            NSData* test = [[[cluster valueForKey:@"xi"] cStringUsingEncoding:NSASCIIStringEncoding]];
+
+
+//            NSLog(@"%@", test);
+            
+            unsigned char xi[clusterSize];
+            unsigned char yi[clusterSize];
+            unsigned char ei[clusterSize];
+            
+            unsigned char maxTOT;
+            
+            // get _character_ values (UTF8 numbers can be multiple bytes)
+            for(int i = 0; i < clusterSize; i++){
+                xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
+                yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
+                ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
+                if(ei[i] > maxTOT){
+                    maxTOT = ei[i];
+                }
+            }
+           
+//            for (int i=0; i < clusterSize; i++) {
+//                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
+//                
+//            }
+            TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [localFBuffer blit];
+                [localFBuffer animateWithLensPosition:self.lensPositionSlider.value];
+            });
         }
-        NSLog (@"%@",[[clusters objectAtIndex:0] valueForKey:@"energy"]);
     } else {
-
         NSLog (@"got raw frame");
-
         //NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
-
         NSString *msg = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         if (msg)
         {
-            /* If you want to get a display friendly version of the IPv4 or IPv6 address, you could do this:
-           
-             NSString *host = nil;
-             uint16_t port = 0;
-             [GCDAsyncUdpSocket getHost:&host port:&port fromAddress:address];
-             
-             */
-            
     //       NSLog (@"Msg: %@",msg);
         }
         else
@@ -890,7 +941,6 @@ withFilterContext:(id)filterContext
                     
                 }
                 
-                    
                 NSArray *d = [line componentsSeparatedByString:@"\t"];
     //            NSLog(@"pixels: %@",d);
                 if ([d count] == 3){
