@@ -13,12 +13,13 @@
 #import "ColorSpaceUtilities.h"
 
 @implementation TPXFrameBufferLayer
+
 @synthesize context = _context;
-@synthesize framebuffer;
 @synthesize isFree;
 @synthesize index;
 @synthesize centerX;
 @synthesize centerY;
+@synthesize energy;
 
 //TPX/MPX standard:
 #define FRAME_WIDTH 255
@@ -159,14 +160,27 @@ int localFrameHeight;
                                          (CGBitmapInfo)(kCGImageAlphaPremultipliedFirst));
 //                                         (CGBitmapInfo)(kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little));
 //                                         (CGBitmapInfo)kCGBitmapByteOrder32Little |kCGImageAlphaNoneSkipFirst);
+        //switch off anti-aliasing
         CGContextSetShouldAntialias(_context, NO);
         CGContextSetAllowsAntialiasing(_context, NO);
-        CGContextSetInterpolationQuality(_context, kCGInterpolationHigh);
+        CGContextSetInterpolationQuality(_context, kCGInterpolationNone);
+
+        //support scale factor of retina devices
+        float scaleFactor = [[UIScreen mainScreen] scale];
+        CGContextScaleCTM(_context, scaleFactor*2, scaleFactor*2);
+
+        
         CGColorSpaceRelease(csp);
         framebuffer = CGBitmapContextGetData(_context);
         //self.frame is not in sync with actual frame width so we save it here
         localFrameWidth=(int)frame.size.width;
         localFrameHeight=(int)frame.size.height;
+//        CGContextSaveGState(_context);
+//        CGContextTranslateCTM(_context, 0.0, localFrameHeight);
+//        CGContextScaleCTM(_context, 1.0, -1.0);
+//        CGContextDrawImage(_context, image, CGRectMake(0, 0, imageWidth, imageHeight));
+//        CGContextRestoreGState(_context);
+
     }
 }
 
@@ -177,27 +191,56 @@ int localFrameHeight;
 
 -(void)animateWithLensPosition:(float) lensPosition
 {
-    self.opacity=0;
-    NSLog(@"center %f %f", self.frame.origin.x,self.frame.origin.y );
+
+//    [self setBorderWidth:1.0];
+//    [self setBorderColor:[UIColor blackColor].CGColor];
+    
+    [CATransaction begin];
+    [CATransaction setDisableActions: YES];
+
+    
+    CGRect screenRect = [[UIScreen mainScreen] bounds];
+    double screenWidth = screenRect.size.width;
+    double screenHeight = screenRect.size.height;
+    CGRect r = self.frame;
+    r.origin.x = floorf((screenWidth/2.0)-(128));
+    r.origin.y = floorf((screenHeight/2.0)-(128));
+    self.frame = r;
+    
+    [CATransaction commit];
+
+    NSLog(@"origin %f %f size %f %f scale %f ", self.frame.origin.x,self.frame.origin.y, self.frame.size.width, self.frame.size.height, self.contentsScale );
     CABasicAnimation* fadeAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
     fadeAnimation.fromValue = @1.0;
-    fadeAnimation.toValue = @0.5;
-    fadeAnimation.fillMode = kCAFillModeForwards;
-    fadeAnimation.removedOnCompletion = NO;
+    fadeAnimation.toValue = @0.8;
+//    fadeAnimation.fillMode = kCAFillModeForwards;
+//    fadeAnimation.removedOnCompletion = NO;
     
     CABasicAnimation* zoomAnimation = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
     zoomAnimation.fromValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
-    zoomAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DMakeScale(4*(1-lensPosition)*3, 4*(1-lensPosition)*3, 1)];
-    zoomAnimation.fillMode = kCAFillModeForwards;
-    zoomAnimation.removedOnCompletion =NO;
+    float scaleFactor = self.energy/40;
+    if (scaleFactor > 12.0)
+        scaleFactor = 12.0;
+    zoomAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DMakeScale((1-lensPosition)*3*scaleFactor, (1-lensPosition)*3*scaleFactor, 1)];
+//    zoomAnimation.fillMode = kCAFillModeForwards;
+//    zoomAnimation.removedOnCompletion =NO;
     
     //                zoomAnimation.fromValue = [NSNumber numberWithFloat:1.0f];
     //                zoomAnimation.toValue = [NSNumber numberWithFloat:10.0f];
     
     CAAnimationGroup *group = [CAAnimationGroup animation];
-    group.duration = 2.0f;
+    float timeScale = 2.0f*self.energy/1000;
+    if(timeScale > 3.0)
+        group.duration = 3.0f;
+    else if (timeScale < 1.5)
+        group.duration = 1.5;
+    else
+        group.duration = 2.0f*self.energy/1000;
+    
     group.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseIn];
+//    group.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionLinear];
     group.animations = [NSArray arrayWithObjects:fadeAnimation, zoomAnimation, nil];
+//    group.animations = [NSArray arrayWithObjects:zoomAnimation, nil];
     group.delegate = self;
     [group setValue:@"groupFadeZoomCluster" forKey:@"animationName"];
     [group setValue:self forKey:@"parentLayer"];
@@ -242,36 +285,53 @@ int localFrameHeight;
 - (TPXFrameBufferLayer *)appendFbArrayWithParentLayer:(CALayer *)parentLayer Index:(uint32_t) index
 {
     TPXFrameBufferLayer * fBuffer = [TPXFrameBufferLayer createLayerWithFrame:parentLayer.frame Index:index];
+    [CATransaction begin];
+    [CATransaction setDisableActions: YES];
+    
+    //FIXME: somehow setting origin has no influence here, why?
+    
+    CGRect screenRect = [[UIScreen mainScreen] bounds];
+    double screenWidth = screenRect.size.width;
+    double screenHeight = screenRect.size.height;
+    CGRect r = fBuffer.frame;
+    r.origin.x = floorf((screenWidth/2.0)-(128));
+    r.origin.y = floorf((screenHeight/2.0)-(128));
+    fBuffer.frame = r;
+    
+    fBuffer.opacity=0;
+    fBuffer.shouldRasterize = YES;
+    //fBuffer.edgeAntialiasingMask = kCALayerLeftEdge | kCALayerRightEdge | kCALayerTopEdge | kCALayerBottomEdge ;
+    fBuffer.geometryFlipped = YES;
+    [fBuffer setRasterizationScale:[UIScreen mainScreen].scale*2];
+    //fBuffer.contentsScale=[[UIScreen mainScreen] scale]*2;
+    
+    [CATransaction commit];
+
     [parentLayer addSublayer:fBuffer];
     [self addObject:fBuffer];
     return fBuffer;
 }
 
-- (TPXFrameBufferLayer *)fillFbLayerWithLength:(int)length  Xi:(unsigned char *) xi Yi:(unsigned char *)yi Ei:(unsigned char *)ei MaxTOT:(unsigned char)maxTOT CenterX:(float) centerX CenterY:(float) centerY
+- (TPXFrameBufferLayer *)fillFbLayerWithLength:(int)length  Xi:(unsigned char *) xi Yi:(unsigned char *)yi Ei:(unsigned char *)ei MaxTOT:(unsigned char)maxTOT CenterX:(float) centerX CenterY:(float) centerY Energy:(float)energy
 {
     int firstFreeFb = [self findFirstFreeFb];
     NSLog(@"filling layer %i", firstFreeFb);
     TPXFrameBufferLayer * fBuffer = [self objectAtIndex:firstFreeFb];
     [CATransaction begin];
     [CATransaction setDisableActions: YES];
-
-    fBuffer.opacity = 0.0;
-    
-    CGRect screenRect = [[UIScreen mainScreen] bounds];
-    double screenWidth = screenRect.size.width;
-    double screenHeight = screenRect.size.height;
-    CGRect r = fBuffer.frame;
-    r.origin.x = screenWidth/2.0+256/2;
-    r.origin.y = screenHeight/2.0256/2;
-    fBuffer.frame = r;
     fBuffer.anchorPoint = CGPointMake(centerX/256, centerY/256);
     [CATransaction commit];
+    NSLog(@"anchor point %f %f", centerX/256,centerY/256 );
     for (int i = 0; i < length; i++) {
-        [fBuffer setPixelWithX:xi[i] y:yi[i] counts:(unsigned char)(ei[i] * MAX_COLORS/maxTOT) ]; //scale tot to max color
+        [fBuffer setPixelWithX:xi[i] y:yi[i] counts:(unsigned char)floor(ei[i] * (MAX_COLORS)/(maxTOT+7)) ]; //scale tot to max color
     }
     fBuffer.isFree = false;
+    
+    //TODO: not used so far, remove properties?
     fBuffer.centerX = centerX;
     fBuffer.centerY = centerY;
+    
+    fBuffer.energy = energy;
     
 //    CGRect r = fBuffer.frame;
 //    r.origin.x = r.origin.x - (256/2) + centerX;
@@ -281,6 +341,8 @@ int localFrameHeight;
 //    r.x = fBuffer.centerX;
 //    r.y = fBuffer.centerY;
 //    fBuffer.anchorPoint = r;
+
+
     return fBuffer;
 }
 

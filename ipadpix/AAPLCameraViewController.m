@@ -117,7 +117,7 @@ dispatch_queue_t networkQueue;
     
     [DDLog addLogger:[DDTTYLogger sharedInstance]];
     
-	self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+//	self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	
 	// Create the AVCaptureSession
 	AVCaptureSession *session = [[AVCaptureSession alloc] init];
@@ -220,7 +220,9 @@ dispatch_queue_t networkQueue;
         r.origin.x = focusPOI.x - (r.size.width/2);
         r.origin.y = focusPOI.y - (r.size.height/2);
         fPview.frame = r;
+//        overlayImageView = [[UIImageView alloc] initWithFrame:self.view.frame];
         overlayImageView = [[UIImageView alloc] initWithFrame:focusPointer];
+
         
 
                 
@@ -741,11 +743,11 @@ dispatch_queue_t networkQueue;
 //            rand = arc4random() % 4;
 //            overlayImageView.transform = CGAffineTransformMakeRotation(1.57*rand);
             
-            r = overlayImageView.frame;
-            r.origin.x = focusPOI.x  - (256/2);
-            r.origin.y = focusPOI.y  - (256/2);
-            overlayImageView.frame = r;
-                        
+//            r = overlayImageView.frame;
+//            r.origin.x = focusPOI.x  - (256/2);
+//            r.origin.y = focusPOI.y  - (256/2);
+//            overlayImageView.frame = r;
+            
 //            NSLog(@"new overlayImageView width: %d, height: %d", (int)overlayImageView.frame.size.width, (int)overlayImageView.frame.size.height);
 
 
@@ -864,6 +866,7 @@ withFilterContext:(id)filterContext
         
             float centerX = [[cluster valueForKey:@"center_x"] floatValue];
             float centerY = [[cluster valueForKey:@"center_y"] floatValue];
+            float energy = [[cluster valueForKey:@"energy"] floatValue];
             NSLog (@"clusterTOT: %@ size: %i centerx: %f centery: %f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
 //            NSLog(@"size xi: %i size yi: %i, size ei: %i ",xdata,ydata,edata);
 
@@ -890,7 +893,7 @@ withFilterContext:(id)filterContext
             unsigned char yi[clusterSize];
             unsigned char ei[clusterSize];
             
-            unsigned char maxTOT;
+            unsigned char maxTOT = 0;
             
             // get _character_ values (UTF8 numbers can be multiple bytes)
             for(int i = 0; i < clusterSize; i++){
@@ -906,7 +909,7 @@ withFilterContext:(id)filterContext
 //                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
 //                
 //            }
-            TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY];
+            TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY Energy:energy];
             dispatch_async(dispatch_get_main_queue(), ^{
                 [localFBuffer blit];
                 [localFBuffer animateWithLensPosition:self.lensPositionSlider.value];

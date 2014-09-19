@@ -9,7 +9,10 @@
 #import <QuartzCore/QuartzCore.h>
 #import <stdint.h>
 
-@interface TPXFrameBufferLayer : CALayer
+@interface TPXFrameBufferLayer : CALayer {
+     uint32_t *framebuffer;
+}
+
 
 // Class method to create a new layer with an underlying
 // bitmap. Both will have the size set by the frame
@@ -33,7 +36,7 @@
 @property(readonly) CGContextRef context;
 
 // Get the raw "frame buffer"
-@property(readonly) uint32_t *framebuffer;
+//@property(readonly) uint32_t *framebuffer;
 
 // mark buffers as free or used
 @property bool isFree;
@@ -41,6 +44,7 @@
 @property uint32_t index;
 @property unsigned char centerX;
 @property unsigned char centerY;
+@property float energy;
 
 @end
 
@@ -59,7 +63,8 @@
                                            Ei:(unsigned char *)ei
                                        MaxTOT:(unsigned char) maxTOT
                                        CenterX:(float) centerX
-                                       CenterY:(float) centerY;
+                                       CenterY:(float) centerY
+                                        Energy:(float) energy;
 
 //find first free fb array index
 -(int)findFirstFreeFb;
