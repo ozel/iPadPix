@@ -20,6 +20,7 @@
 #import "DDTTYLogger.h"
 #import "TPXFrameBufferLayer.h"
 #import "TPXClusterView.h"
+#import "MotionManagerSingleton.h"
 
 #import <ObjectiveAvro/OAVAvroSerialization.h>
 
@@ -383,7 +384,7 @@ CGPoint defaultFocusPOI;
     // Create and configure the scene.
 //                scene = [self unarchiveFromFile:@"GameScene"];
 //    scene = [[SKScene alloc] initWithSize:[[UIScreen mainScreen] bounds].size];
-    SKScene * scene = [[SKScene alloc] initWithSize:skView.bounds.size];
+    scene = [[TPXClusterScene alloc] initWithSize:skView.bounds.size];
 
     scene.anchorPoint = CGPointMake(0.5, 0.5);
 
@@ -409,12 +410,14 @@ CGPoint defaultFocusPOI;
 //    scene.backgroundColor = [UIColor blackColor];
     
     // clusterField is the parent node of all clusters, the "world" node
-    clusterField = [SKNode node];
+    ClusterFieldNode * clusterField = [[ClusterFieldNode alloc] initWithSize:[[UIScreen mainScreen] bounds].size];
     clusterField.name = @"clusterField";
-    [scene addChild:clusterField];
-    SKNode *camera = [SKNode node];
-    camera.name = @"camera";
-    [clusterField addChild:camera];
+    scene.clusters = clusterField;
+    [scene addChild:scene.clusters];
+    
+//    SKNode *camera = [SKNode node];
+//    camera.name = @"camera";
+//    [clusterField addChild:camera];
     
     [[self view] addSubview:skView];
     [skView presentScene:scene];
@@ -828,7 +831,12 @@ CGPoint defaultFocusPOI;
     
     float lensPosition = self.lensPositionSlider.value;
     
+    // adjust things only if camera finished focusing on objects
+    // else set timer to come back here
     if (!self.videoDevice.isAdjustingFocus){
+        // re-calibrate core motion
+        //[MotionManagerSingleton calibrate];
+        
         NSLog(@"focusPOI: %@", NSStringFromCGPoint(focusPOI));
         dispatch_async(dispatch_get_main_queue(), ^{
             
@@ -938,6 +946,13 @@ withFilterContext:(id)filterContext
 //    NSLog (@"%@",fromAvro);
 //        NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
       
+        //save current device orientation as reference
+        CMAttitude * attitude = [MotionManagerSingleton getAttitude];
+        //                if(attitude==nil){
+        //                    //during init phase we don't have a proper attitude, yet
+        //                    attitude = [[CMAttitude alloc] init];
+        //                }
+
         NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];
         int counts = (int)[clusters count];
         NSLog (@"got %i avro clusters", counts);
@@ -984,7 +999,7 @@ withFilterContext:(id)filterContext
             //TODO: is dispatching here better for fast packet processing?
             dispatch_async(dispatch_get_main_queue(), ^{
 
-            uint32_t framebuffer[256*256]={0};
+                uint32_t framebuffer[256*256]={0};
                 
                 unsigned char xi[clusterSize];
                 unsigned char yi[clusterSize];
@@ -1016,12 +1031,12 @@ withFilterContext:(id)filterContext
                 
                 uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
                 for (int i = 0; i < clusterSize; i++) {
-                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+5))];
+                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+6))];
 
                 }
 
 //                    SKSpriteNode *sprite = [SKSpriteNode spriteNodeWithColor:[SKColor redColor] size:CGSizeMake(256, 256)];
-                SKSpriteNode *sprite = [SKSpriteNode node];
+                SKSpriteNode *sprite = [[SKSpriteNode alloc] init];
                 NSData * data = [NSData dataWithBytes:framebuffer length:256*256*4];
                 SKTexture *tex = [SKTexture textureWithData:data size:CGSizeMake(256, 256)];
                 tex.filteringMode = SKTextureFilteringNearest;
@@ -1029,6 +1044,13 @@ withFilterContext:(id)filterContext
                 sprite.size = tex.size;
                 sprite.alpha = 1;
                 sprite.anchorPoint = CGPointMake((centerX/256), (centerY/256));
+
+                sprite.userData = [NSMutableDictionary dictionary];
+                if(attitude){
+                    [sprite.userData setObject:attitude forKey:@"attitude"];
+                }
+                [sprite.userData setValue:@(energy) forKey:@"energy"];
+
 
                 // sprite scale must be in sync with fpFrame size
                 float geoFactor = (768.0/256.0) * (1-self.lensPositionSlider.value);
@@ -1039,7 +1061,7 @@ withFilterContext:(id)filterContext
                 [sprite setPosition:CGPointMake((centerX-128) * geoFactor,
                                                 (centerY-128) * geoFactor)];
 
-                [clusterField addChild:sprite];
+                [scene.clusters addChild:sprite];
                 
                 // set energy dependant scale and time factors
                 float scaleFactor = energy/40;
@@ -1048,24 +1070,25 @@ withFilterContext:(id)filterContext
                 
                 float timeScale = 2.0f*energy/2000;
              
-                if(timeScale > 3.0)
-                    timeScale= 3.0f;
-                else if (timeScale < 1.5)
-                    timeScale = 1.5;
+                if(timeScale > 3.5)
+                    timeScale= 3.5f;
+                else if (timeScale < 2.0)
+                    timeScale = 2.0;
                 
-                float alpaFactor = 0.1*energy/1000;
+                float alpaFactor = 0.2*energy/1000;
                 if (alpaFactor > 1)
                     alpaFactor = 1;
                 else if (alpaFactor < 0.5)
                     alpaFactor = 0.5;
                 
                 SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
-                zoom.timingMode = SKActionTimingEaseIn;
-                SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale+0.1];
+                zoom.timingMode = SKActionTimingEaseOut;
+                SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale];
 //                fade.timingMode = SKActionTimingEaseOut;
                 SKAction *remove = [SKAction removeFromParent];
 //                [sprite runAction: [SKAction sequence:@[zoom, remove]]];
                 SKAction * zoomFade = [SKAction group:@[zoom, fade]];
+                
                 [sprite runAction: [SKAction sequence:@[zoomFade, remove]]];
 #endif
             });

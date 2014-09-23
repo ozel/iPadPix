@@ -13,3 +13,19 @@
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event;
 
 @end
+
+@interface ClusterFieldNode : SKSpriteNode
+
+-(id)initWithSize:(CGSize)size;
+-(void)scrollWith:(float)speed Dt:(float)dt;
+
+
+@end
+
+@interface  TPXClusterScene : SKScene
+
+@property ClusterFieldNode * clusters;
+
+
+@end
+

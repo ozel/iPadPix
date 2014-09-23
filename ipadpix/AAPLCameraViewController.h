@@ -11,13 +11,14 @@
 @import UIKit;
 #import "TPXFrameBufferLayer.h"
 #import <SpriteKit/SpriteKit.h>
+#import "TPXClusterView.h"
 
 
 
 CGPoint focusPOI;
 UIView * fPview;
 SKView * skView;
-SKNode * clusterField;
+TPXClusterScene * scene;
 CALayer * fpFrame;
 
 @interface AAPLCameraViewController : UIViewController

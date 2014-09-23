@@ -28,6 +28,7 @@
 		B854782D19A23CC600289564 /* 8_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782319A23CC600289564 /* 8_.png */; };
 		B854782E19A23CC600289564 /* 9_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782419A23CC600289564 /* 9_.png */; };
 		B8610FF019D06D75007A4732 /* TPXClusterView.m in Sources */ = {isa = PBXBuildFile; fileRef = B8610FEF19D06D75007A4732 /* TPXClusterView.m */; };
+		B8610FF319D17C79007A4732 /* MotionManagerSingleton.m in Sources */ = {isa = PBXBuildFile; fileRef = B8610FF219D17C79007A4732 /* MotionManagerSingleton.m */; };
 		B89EC9EC19B0D81400185BB3 /* tpx_schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B89EC9EB19B0D81400185BB3 /* tpx_schema.json */; };
 		B8F30AFA19A4C9DB0007B8C2 /* TPXFrameBufferLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */; };
 		B8F30B1119A631A70007B8C2 /* DDAbstractDatabaseLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AFF19A631A70007B8C2 /* DDAbstractDatabaseLogger.m */; };
@@ -75,6 +76,8 @@
 		B854782F19A23E6E00289564 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B8610FEE19D06D75007A4732 /* TPXClusterView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPXClusterView.h; sourceTree = "<group>"; };
 		B8610FEF19D06D75007A4732 /* TPXClusterView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPXClusterView.m; sourceTree = "<group>"; };
+		B8610FF119D17C6F007A4732 /* MotionManagerSingleton.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MotionManagerSingleton.h; sourceTree = "<group>"; };
+		B8610FF219D17C79007A4732 /* MotionManagerSingleton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MotionManagerSingleton.m; sourceTree = "<group>"; };
 		B89EC9EB19B0D81400185BB3 /* tpx_schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = tpx_schema.json; sourceTree = "<group>"; };
 		B8E8BD4619C0B820001F2797 /* ColorSpaceUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ColorSpaceUtilities.h; sourceTree = "<group>"; };
 		B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPXFrameBufferLayer.m; sourceTree = "<group>"; };
@@ -155,6 +158,8 @@
 				B8610FEE19D06D75007A4732 /* TPXClusterView.h */,
 				B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */,
 				B8F30AFC19A4CA230007B8C2 /* TPXFrameBufferLayer.h */,
+				B8610FF119D17C6F007A4732 /* MotionManagerSingleton.h */,
+				B8610FF219D17C79007A4732 /* MotionManagerSingleton.m */,
 				B8E8BD4619C0B820001F2797 /* ColorSpaceUtilities.h */,
 				B854753A19A2399C00289564 /* Main.storyboard */,
 				B854753C19A2399C00289564 /* CameraFocusSquare.h */,
@@ -365,6 +370,7 @@
 				B854754719A2399C00289564 /* CameraFocusSquare.m in Sources */,
 				B8F30B1519A631A70007B8C2 /* DDTTYLogger.m in Sources */,
 				B8F30B1219A631A70007B8C2 /* DDASLLogger.m in Sources */,
+				B8610FF319D17C79007A4732 /* MotionManagerSingleton.m in Sources */,
 				B854754B19A2399C00289564 /* main.m in Sources */,
 				B8F30B1619A631A70007B8C2 /* DDContextFilterLogFormatter.m in Sources */,
 				B8F30B1119A631A70007B8C2 /* DDAbstractDatabaseLogger.m in Sources */,
