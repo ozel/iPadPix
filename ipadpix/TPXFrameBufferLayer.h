@@ -9,14 +9,21 @@
 #import <QuartzCore/QuartzCore.h>
 #import <stdint.h>
 
+
+
+
+
 @interface TPXFrameBufferLayer : CALayer {
-     uint32_t *framebuffer;
 }
 
 
 // Class method to create a new layer with an underlying
 // bitmap. Both will have the size set by the frame
 + (TPXFrameBufferLayer *)createLayerWithFrame:(CGRect)frame Index:(uint32_t) index;
+
+
++(uint32_t *)getPalette;
+
 // Same as above
 - (id)initWithFrame:(CGRect)frame;
 
@@ -25,6 +32,7 @@
 
 // Set (x,y) pixel with TOT counts
 - (void)setPixelWithX:(unsigned char)x y:(unsigned char)y counts:(unsigned char)counts;
+- (void)setPixelRGBAWithX:(unsigned char)x y:(unsigned char)y counts:(unsigned char)counts;
 
 // clear layer bitmap and blit
 - (void)clear;
@@ -36,7 +44,7 @@
 @property(readonly) CGContextRef context;
 
 // Get the raw "frame buffer"
-//@property(readonly) uint32_t *framebuffer;
+@property(readonly) uint32_t *framebuffer;
 
 // mark buffers as free or used
 @property bool isFree;
@@ -45,6 +53,7 @@
 @property unsigned char centerX;
 @property unsigned char centerY;
 @property float energy;
+@property uint32_t *palette_rgba;
 
 @end
 

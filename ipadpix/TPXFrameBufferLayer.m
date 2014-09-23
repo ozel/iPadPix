@@ -20,6 +20,7 @@
 @synthesize centerX;
 @synthesize centerY;
 @synthesize energy;
+@synthesize framebuffer;
 
 //TPX/MPX standard:
 #define FRAME_WIDTH 255
@@ -44,6 +45,8 @@
 #define MAX_COLORS 256
 
 uint32_t palette[MAX_COLORS];
+uint32_t palette_rgba[MAX_COLORS];
+
 bool paletteInitialized = false;
 
 int localFrameWidth;
@@ -90,10 +93,16 @@ int localFrameHeight;
 //            ((int)floor(blue *255.0));
             
             //BGRA
-            palette[i] = ((int)floor(blue  *255.0)) << (3*8) |
-                        ((int)floor(green    *255.0)) << (2*8) |
-                        ((int)floor(red     *255.0)) << (1*8) |
-                        ((int)floor(alpha   *255.0));
+            palette[i] = ((int)floor(blue  *256.0)) << (3*8) |
+                        ((int)floor(green  *256.0)) << (2*8) |
+                        ((int)floor(red   *256.0)) << (1*8) |
+                        ((int)floor(alpha  *256.0));
+            
+            //sprite kit texture format, should be RGBA
+            palette_rgba[i] = ((int)floor(alpha  *255.0)) << (3*8) |
+                            ((int)floor(blue  *255.0)) << (2*8) |
+                            ((int)floor(green   *255.0)) << (1*8) |
+                            ((int)floor(red  *255.0));
         }
         paletteInitialized = true;
     }
@@ -103,6 +112,10 @@ int localFrameHeight;
     fBuffer.index = index;
    return fBuffer;
     
+}
+
++(uint32_t *)getPalette{
+    return palette_rgba;
 }
 
 - (id)initWithFrame:(CGRect)frame
@@ -130,6 +143,11 @@ int localFrameHeight;
 - (void)setPixelWithX:(unsigned char)x y:(unsigned char)y counts:(unsigned char)counts
 {
     framebuffer[(y * localFrameWidth) + x] = palette[counts];
+}
+
+- (void)setPixelRGBAWithX:(unsigned char)x y:(unsigned char)y counts:(unsigned char)counts
+{
+    framebuffer[(y * localFrameWidth) + x] = palette_rgba[counts];
 }
 
 -(void)clear
@@ -198,14 +216,24 @@ int localFrameHeight;
     [CATransaction begin];
     [CATransaction setDisableActions: YES];
 
-    
-    CGRect screenRect = [[UIScreen mainScreen] bounds];
-    double screenWidth = screenRect.size.width;
-    double screenHeight = screenRect.size.height;
-    CGRect r = self.frame;
-    r.origin.x = floorf((screenWidth/2.0)-(128));
-    r.origin.y = floorf((screenHeight/2.0)-(128));
-    self.frame = r;
+    //if fBuffer parent layer is the whole screen
+//    CGRect screenRect = [[UIScreen mainScreen] bounds];
+//    double screenWidth = screenRect.size.width;
+//    double screenHeight = screenRect.size.height;
+//    CGRect r = self.frame;
+//    r.origin.x = floorf((screenWidth/2.0)-(128));
+//    r.origin.y = floorf((screenHeight/2.0)-(128));
+//    self.frame = r;
+    //fBuffer is a subview of another view
+    //set the origin
+    [self setFrame:({
+        CGRect frame = self.frame;
+        
+        frame.origin.x = (self.frame.size.width/2.0) - localFrameWidth/2;
+        frame.origin.y = (self.frame.size.height/2.0) - localFrameHeight/2;
+        
+        CGRectIntegral(frame);
+    })];
     
     [CATransaction commit];
 
@@ -289,14 +317,13 @@ int localFrameHeight;
     [CATransaction setDisableActions: YES];
     
     //FIXME: somehow setting origin has no influence here, why?
-    
-    CGRect screenRect = [[UIScreen mainScreen] bounds];
-    double screenWidth = screenRect.size.width;
-    double screenHeight = screenRect.size.height;
-    CGRect r = fBuffer.frame;
-    r.origin.x = floorf((screenWidth/2.0)-(128));
-    r.origin.y = floorf((screenHeight/2.0)-(128));
-    fBuffer.frame = r;
+//    CGRect screenRect = [[UIScreen mainScreen] bounds];
+//    double screenWidth = screenRect.size.width;
+//    double screenHeight = screenRect.size.height;
+//    CGRect r = fBuffer.frame;
+//    r.origin.x = floorf((screenWidth/2.0)-(128));
+//    r.origin.y = floorf((screenHeight/2.0)-(128));
+//    fBuffer.frame = r;
     
     fBuffer.opacity=0;
     fBuffer.shouldRasterize = YES;

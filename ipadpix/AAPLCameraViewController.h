@@ -10,14 +10,20 @@
 
 @import UIKit;
 #import "TPXFrameBufferLayer.h"
+#import <SpriteKit/SpriteKit.h>
 
 
 
 CGPoint focusPOI;
-UIView *fPview;
-
+UIView * fPview;
+SKView * skView;
+SKNode * clusterField;
+CALayer * fpFrame;
 
 @interface AAPLCameraViewController : UIViewController
+
+- (SKScene *)unarchiveFromFile:(NSString *)file;
+
 @property (nonatomic) CGRect focusPointer;
 @property (nonatomic) TPXFrameBufferLayer * fBuffer;
 @property (nonatomic) NSMutableArray * fbArray;

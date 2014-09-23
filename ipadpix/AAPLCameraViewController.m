@@ -12,13 +12,14 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <AssetsLibrary/AssetsLibrary.h>
-
+#import <SpriteKit/SpriteKit.h>
 #import "AAPLPreviewView.h"
 
 #import "GCDAsyncUdpSocket.h"
 #import "DDLog.h"
 #import "DDTTYLogger.h"
 #import "TPXFrameBufferLayer.h"
+#import "TPXClusterView.h"
 
 #import <ObjectiveAvro/OAVAvroSerialization.h>
 
@@ -68,7 +69,7 @@ static UIColor* CONTROL_HIGHLIGHT_COLOR = nil;
 
 NSTimer *focusTimer = nil;
 dispatch_queue_t networkQueue;
-
+CGPoint defaultFocusPOI;
 
 @synthesize focusPointer;
 @synthesize fBuffer;
@@ -107,6 +108,21 @@ dispatch_queue_t networkQueue;
 - (BOOL)isSessionRunningAndDeviceAuthorized
 {
 	return [[self session] isRunning] && [self isDeviceAuthorized];
+}
+
+- (SKScene *)unarchiveFromFile:(NSString *)file {
+    /* Retrieve scene file path from the application bundle */
+    NSString *nodePath = [[NSBundle mainBundle] pathForResource:file ofType:@"sks"];
+    /* Unarchive the file to an SKScene object */
+    NSData *data = [NSData dataWithContentsOfFile:nodePath
+                                          options:NSDataReadingMappedIfSafe
+                                            error:nil];
+    NSKeyedUnarchiver *arch = [[NSKeyedUnarchiver alloc] initForReadingWithData:data];
+    [arch setClass:[SKScene class] forClassName:@"SKScene"];
+    SKScene *scene = [arch decodeObjectForKey:NSKeyedArchiveRootObjectKey];
+    [arch finishDecoding];
+    
+    return scene;
 }
 
 - (void)viewDidLoad
@@ -182,13 +198,6 @@ dispatch_queue_t networkQueue;
             
         }
 		
-        CGRect screenRect = [[UIScreen mainScreen] bounds];
-        double screenWidth = screenRect.size.width;
-        double screenHeight = screenRect.size.height;
-        focusPOI.x = screenWidth/2.0;
-        focusPOI.y = screenHeight/2.0;
-        
-        CGPoint defaultFocusPOI = CGPointMake(.5, .5);
         
         //configure video display size and exposure mode
         
@@ -212,38 +221,16 @@ dispatch_queue_t networkQueue;
         }
         
   
-        focusPointer = CGRectMake(0.0, 0.0, 255, 255); //was 100, 100
        
-        fPview = [[UIView alloc] initWithFrame:focusPointer];
-        CGRect r = focusPointer;
-        r.origin = self.view.bounds.origin;
-        r.origin.x = focusPOI.x - (r.size.width/2);
-        r.origin.y = focusPOI.y - (r.size.height/2);
-        fPview.frame = r;
-//        overlayImageView = [[UIImageView alloc] initWithFrame:self.view.frame];
-        overlayImageView = [[UIImageView alloc] initWithFrame:focusPointer];
+     
 
-        
+      
 
-                
-        fBuffer = [TPXFrameBufferLayer createLayerWithFrame:CGRectMake(0, 0, 255, 255) Index:999];
-        fbArray = [NSMutableArray initTPXFrameBuffersWithParentLayer:overlayImageView.layer];
-
-        
-        //fPview.backgroundColor = UIColor.redColor; //
-        fPview.backgroundColor = UIColor.clearColor; //
-        [fPview.layer setBorderWidth:5.0];
-        [fPview.layer setCornerRadius:4.0];
-
-        [fPview.layer setBorderColor:[UIColor yellowColor].CGColor];
-
-        
-        [[fPview layer] setOpacity:0.5];
 
 		
         dispatch_async(dispatch_get_main_queue(), ^{
 			[self configureManualHUD];
-            [[self view] addSubview:fPview];
+
             // translate, then scale, then rotate
 //            CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(self.previewView.layer.bounds.size.width/4.0), 0.0);
 //            affineTransform = CGAffineTransformScale(affineTransform, 1.0, 1.0);
@@ -255,14 +242,16 @@ dispatch_queue_t networkQueue;
             
             //            [[overlayImageView layer] setOpacity:1.0];
             //            [fBuffer setOpacity:1.0];
-            fBuffer.contentsScale = [[UIScreen mainScreen] scale];
-            [self.view addSubview:overlayImageView];
-            [overlayImageView.layer addSublayer:fBuffer];
+
 		});
 
 	});
 	
 	self.manualHUDFocusView.hidden = YES;
+    
+  
+
+
     
     // setup and bind UDP server socket to port
   
@@ -293,12 +282,6 @@ dispatch_queue_t networkQueue;
 }
 
 
-//- (void)drawRect:(CGRect)rect {
-////    CGContextRef context = UIGraphicsGetCurrentContext();
-////    //[self.view renderInContext:context];
-////    CGContextSetAllowsAntialiasing(context, false);
-//}
-
 - (void)viewWillAppear:(BOOL)animated
 {
 	[super viewWillAppear:animated];
@@ -308,6 +291,133 @@ dispatch_queue_t networkQueue;
             [[self session] startRunning];
         });
     }
+    
+    CGRect screenRect = [[UIScreen mainScreen] bounds];
+    double screenWidth = screenRect.size.width;
+    double screenHeight = screenRect.size.height;
+    focusPOI.x = screenWidth/2.0;
+    focusPOI.y = screenHeight/2.0;
+    
+    defaultFocusPOI = CGPointMake(.5, .5);
+
+    //focuspointer is used for the initial fpView frame size and equals timepix frame size
+    focusPointer = CGRectMake(0.0, 0.0, 255, 255);
+
+    //    fPview = [[UIView alloc] initWithFrame:focusPointer];
+    CGRect r = focusPointer;
+    r.origin = self.view.bounds.origin;
+    r.origin.x = focusPOI.x - (r.size.width/2.0);
+    r.origin.y = focusPOI.y - (r.size.height/2.0);
+//    fPview.frame = CGRectIntegral(r);
+    
+    fpFrame = [[CALayer alloc] init];
+    fpFrame.frame = CGRectIntegral(r);
+    
+
+    
+    //        overlayImageView = [[UIImageView alloc] initWithFrame:self.view.frame];
+    overlayImageView = [[UIImageView alloc] initWithFrame:focusPointer];
+    overlayImageView.frame = CGRectIntegral(r);
+
+    r.origin = defaultFocusPOI;
+    focusPointer = r;
+    
+    //old full-frame buffer
+    fBuffer = [TPXFrameBufferLayer createLayerWithFrame:focusPointer Index:999];
+//    fBuffer.contentsScale = [[UIScreen mainScreen] scale]*2;
+    
+    //new cluster frame buffer array
+    fbArray = [NSMutableArray initTPXFrameBuffersWithParentLayer:overlayImageView.layer];
+    
+    
+    //fPview.backgroundColor = UIColor.redColor; //
+    fpFrame.backgroundColor = [UIColor clearColor].CGColor; //
+    
+    //the layer border wll be above the content, therefore the workaround below
+//    [fPview.layer setBorderWidth:2.0];
+//    [fPview.layer setCornerRadius:0.0];
+    CAShapeLayer * _border = [CAShapeLayer layer];
+    _border.strokeColor = [UIColor colorWithRed:255/255.0f green:255/255.0f blue:119/255.0f alpha:0.5f].CGColor;
+
+    _border.fillColor = nil;
+
+    [fpFrame addSublayer:_border];
+    _border.path = [UIBezierPath bezierPathWithRoundedRect:fpFrame.bounds cornerRadius:0.f].CGPath;
+    
+    [fpFrame setBorderColor:[UIColor yellowColor].CGColor];
+    
+    
+    [fpFrame setOpacity:1];
+//    [fPview setAutoresizesSubviews:YES];
+//    [fPview setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
+
+
+    
+    [[self view].layer addSublayer:fpFrame];
+    [overlayImageView.layer addSublayer:fBuffer];
+    
+//    [overlayImageView.layer setBackgroundColor:[UIColor redColor].CGColor];
+    
+    // Configure the sprite kit view
+    skView = [[SKView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    
+    [skView addSubview:overlayImageView];
+
+//    skView = [[SKView alloc] initWithFrame:self.view.bounds];
+//      skView = [[SKView alloc] initWithFrame:focusPointer];
+    
+    skView.showsFPS = YES;
+    skView.showsNodeCount = YES;
+//    [skView setFrame:({
+//        CGRect frame = skView.frame;
+//        
+//        frame.origin.x = ([[UIScreen mainScreen] bounds].size.width - frame.size.width) / 2.0;
+//        frame.origin.y = ([[UIScreen mainScreen] bounds].size.height - frame.size.height) / 2.0;
+//        
+//        CGRectIntegral(frame);
+//    })];
+//    
+    /* Sprite Kit applies additional optimizations to improve rendering performance */
+    skView.ignoresSiblingOrder = YES;
+    
+    // Create and configure the scene.
+//                scene = [self unarchiveFromFile:@"GameScene"];
+//    scene = [[SKScene alloc] initWithSize:[[UIScreen mainScreen] bounds].size];
+    SKScene * scene = [[SKScene alloc] initWithSize:skView.bounds.size];
+
+    scene.anchorPoint = CGPointMake(0.5, 0.5);
+
+//    skView.layer.contentsScale = [[UIScreen mainScreen] scale];
+
+    if (!scene)
+        NSLog(@"no scene loaded");
+//    scene.scaleMode = SKSceneScaleModeAspectFill;
+//    scene.scaleMode = SKSceneScaleModeResizeFill;
+    
+ 
+//    SKLabelNode *myLabel = [SKLabelNode labelNodeWithFontNamed:@"Courier"];
+//    
+//    myLabel.text=@"+";
+//    myLabel.fontSize = 50;
+////    myLabel.position = CGPointMake(CGRectGetMidX(self.view.bounds),
+////                                   CGRectGetMidY(self.view.bounds));
+//    myLabel.position = CGPointMake(0,0);
+//          [scene addChild:myLabel];
+    
+    skView.allowsTransparency = YES;
+    scene.backgroundColor = [UIColor clearColor];
+//    scene.backgroundColor = [UIColor blackColor];
+    
+    // clusterField is the parent node of all clusters, the "world" node
+    clusterField = [SKNode node];
+    clusterField.name = @"clusterField";
+    [scene addChild:clusterField];
+    SKNode *camera = [SKNode node];
+    camera.name = @"camera";
+    [clusterField addChild:camera];
+    
+    [[self view] addSubview:skView];
+    [skView presentScene:scene];
 }
 
 - (void)viewDidDisappear:(BOOL)animated
@@ -357,7 +467,7 @@ dispatch_queue_t networkQueue;
     focusPOI.y = screenHeight/2.0;
     r.origin.x = focusPOI.x - (r.size.width/2);
     r.origin.y = focusPOI.y - (r.size.height/2);
-    fPview.frame = r;
+    fpFrame.frame = CGRectIntegral(r);
     });
 }
 
@@ -718,22 +828,13 @@ dispatch_queue_t networkQueue;
     
     float lensPosition = self.lensPositionSlider.value;
     
-    CGRect screenRect = [[UIScreen mainScreen] bounds];
-//    double screenWidth = screenRect.size.width;
-    double screenHeight = screenRect.size.height;
-    
     if (!self.videoDevice.isAdjustingFocus){
         NSLog(@"focusPOI: %@", NSStringFromCGPoint(focusPOI));
         dispatch_async(dispatch_get_main_queue(), ^{
-            CGRect r = focusPointer;
-            r.origin = self.view.bounds.origin;
-//            r.size.height = 50 + ((int)floor(r.size.height / (lensPosition+0.1)));
-//            r.size.width  = 50 + ((int)floor(r.size.width  / (lensPosition+0.1)));
-            r.size.height = (screenHeight/ ((lensPosition+1.0)*(lensPosition+1.0)) );
-            r.size.width  = r.size.height;
-            r.origin.x = focusPOI.x - (r.size.width/2);
-            r.origin.y = focusPOI.y - (r.size.height/2);
-            fPview.frame = r;
+            
+            //rescale focuspointer frame
+
+            fpFrame.affineTransform = CGAffineTransformMakeScale((1-lensPosition)*3, (1-lensPosition)*3);
             
             //display some randomized frames
 //            int rand = arc4random() % 10 +1;
@@ -754,17 +855,8 @@ dispatch_queue_t networkQueue;
          
             fBuffer.transform = CATransform3DMakeScale(3*(1-lensPosition), 3*(1-lensPosition), 1);
 
-            
+           
             dispatch_async(dispatch_get_main_queue(), ^{
-             
-//                [[fPview layer] setOpacity:1.0];
-//                [UIView animateWithDuration:.10 animations:^{
-//                    [fPview.layer setBorderColor:[UIColor redColor].CGColor];
-//                    [[fPview layer] setOpacity:0.0];
-//                }];
-                
-//                [fPview.layer setBorderColor:[UIColor yellowColor].CGColor];
-//                [[fPview layer] setOpacity:1.0];
                 fBuffer.opacity=0;
                 CABasicAnimation* fadeAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
                 fadeAnimation.fromValue = @1.0;
@@ -782,7 +874,7 @@ dispatch_queue_t networkQueue;
 //                zoomAnimation.toValue = [NSNumber numberWithFloat:10.0f];
               
                 CAAnimationGroup *group = [CAAnimationGroup animation];
-                group.duration = 1.8f;
+                group.duration = 1.8;
                 group.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseIn];
                 group.animations = [NSArray arrayWithObjects:fadeAnimation, zoomAnimation, nil];
                 group.delegate = self;
@@ -889,30 +981,93 @@ withFilterContext:(id)filterContext
 
 //            NSLog(@"%@", test);
             
-            unsigned char xi[clusterSize];
-            unsigned char yi[clusterSize];
-            unsigned char ei[clusterSize];
-            
-            unsigned char maxTOT = 0;
-            
-            // get _character_ values (UTF8 numbers can be multiple bytes)
-            for(int i = 0; i < clusterSize; i++){
-                xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
-                yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
-                ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
-                if(ei[i] > maxTOT){
-                    maxTOT = ei[i];
+            //TODO: is dispatching here better for fast packet processing?
+            dispatch_async(dispatch_get_main_queue(), ^{
+
+            uint32_t framebuffer[256*256]={0};
+                
+                unsigned char xi[clusterSize];
+                unsigned char yi[clusterSize];
+                unsigned char ei[clusterSize];
+                
+                unsigned char maxTOT = 0;
+                
+                // get _character_ values (UTF8 numbers can be multiple bytes)
+                for(int i = 0; i < clusterSize; i++){
+                    xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
+                    yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
+                    ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
+                    if(ei[i] > maxTOT){
+                        maxTOT = ei[i];
+                    }
                 }
-            }
            
 //            for (int i=0; i < clusterSize; i++) {
 //                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
 //                
 //            }
-            TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY Energy:energy];
-            dispatch_async(dispatch_get_main_queue(), ^{
+
+#if 0
+              TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY Energy:energy];
                 [localFBuffer blit];
                 [localFBuffer animateWithLensPosition:self.lensPositionSlider.value];
+
+#else
+                
+                uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
+                for (int i = 0; i < clusterSize; i++) {
+                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+5))];
+
+                }
+
+//                    SKSpriteNode *sprite = [SKSpriteNode spriteNodeWithColor:[SKColor redColor] size:CGSizeMake(256, 256)];
+                SKSpriteNode *sprite = [SKSpriteNode node];
+                NSData * data = [NSData dataWithBytes:framebuffer length:256*256*4];
+                SKTexture *tex = [SKTexture textureWithData:data size:CGSizeMake(256, 256)];
+                tex.filteringMode = SKTextureFilteringNearest;
+                sprite.texture = tex;
+                sprite.size = tex.size;
+                sprite.alpha = 1;
+                sprite.anchorPoint = CGPointMake((centerX/256), (centerY/256));
+
+                // sprite scale must be in sync with fpFrame size
+                float geoFactor = (768.0/256.0) * (1-self.lensPositionSlider.value);
+                sprite.scale = (geoFactor);
+
+//                [sprite setScale:10.0f];
+//                [sprite setPosition:CGPointMake((focusPointer.size.width/2),(focusPointer.size.height/2))];
+                [sprite setPosition:CGPointMake((centerX-128) * geoFactor,
+                                                (centerY-128) * geoFactor)];
+
+                [clusterField addChild:sprite];
+                
+                // set energy dependant scale and time factors
+                float scaleFactor = energy/40;
+                if (scaleFactor > 8.0)
+                    scaleFactor = 8.0;
+                
+                float timeScale = 2.0f*energy/2000;
+             
+                if(timeScale > 3.0)
+                    timeScale= 3.0f;
+                else if (timeScale < 1.5)
+                    timeScale = 1.5;
+                
+                float alpaFactor = 0.1*energy/1000;
+                if (alpaFactor > 1)
+                    alpaFactor = 1;
+                else if (alpaFactor < 0.5)
+                    alpaFactor = 0.5;
+                
+                SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
+                zoom.timingMode = SKActionTimingEaseIn;
+                SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale+0.1];
+//                fade.timingMode = SKActionTimingEaseOut;
+                SKAction *remove = [SKAction removeFromParent];
+//                [sprite runAction: [SKAction sequence:@[zoom, remove]]];
+                SKAction * zoomFade = [SKAction group:@[zoom, fade]];
+                [sprite runAction: [SKAction sequence:@[zoomFade, remove]]];
+#endif
             });
         }
     } else {

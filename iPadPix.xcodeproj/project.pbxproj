@@ -27,6 +27,7 @@
 		B854782C19A23CC600289564 /* 7_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782219A23CC600289564 /* 7_.png */; };
 		B854782D19A23CC600289564 /* 8_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782319A23CC600289564 /* 8_.png */; };
 		B854782E19A23CC600289564 /* 9_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854782419A23CC600289564 /* 9_.png */; };
+		B8610FF019D06D75007A4732 /* TPXClusterView.m in Sources */ = {isa = PBXBuildFile; fileRef = B8610FEF19D06D75007A4732 /* TPXClusterView.m */; };
 		B89EC9EC19B0D81400185BB3 /* tpx_schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B89EC9EB19B0D81400185BB3 /* tpx_schema.json */; };
 		B8F30AFA19A4C9DB0007B8C2 /* TPXFrameBufferLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */; };
 		B8F30B1119A631A70007B8C2 /* DDAbstractDatabaseLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = B8F30AFF19A631A70007B8C2 /* DDAbstractDatabaseLogger.m */; };
@@ -72,6 +73,8 @@
 		B854782319A23CC600289564 /* 8_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 8_.png; sourceTree = "<group>"; };
 		B854782419A23CC600289564 /* 9_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 9_.png; sourceTree = "<group>"; };
 		B854782F19A23E6E00289564 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		B8610FEE19D06D75007A4732 /* TPXClusterView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPXClusterView.h; sourceTree = "<group>"; };
+		B8610FEF19D06D75007A4732 /* TPXClusterView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPXClusterView.m; sourceTree = "<group>"; };
 		B89EC9EB19B0D81400185BB3 /* tpx_schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = tpx_schema.json; sourceTree = "<group>"; };
 		B8E8BD4619C0B820001F2797 /* ColorSpaceUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ColorSpaceUtilities.h; sourceTree = "<group>"; };
 		B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPXFrameBufferLayer.m; sourceTree = "<group>"; };
@@ -148,6 +151,8 @@
 				B854753719A2399C00289564 /* AAPLCameraViewController.m */,
 				B854753819A2399C00289564 /* AAPLPreviewView.h */,
 				B854753919A2399C00289564 /* AAPLPreviewView.m */,
+				B8610FEF19D06D75007A4732 /* TPXClusterView.m */,
+				B8610FEE19D06D75007A4732 /* TPXClusterView.h */,
 				B8F30AF919A4C9DB0007B8C2 /* TPXFrameBufferLayer.m */,
 				B8F30AFC19A4CA230007B8C2 /* TPXFrameBufferLayer.h */,
 				B8E8BD4619C0B820001F2797 /* ColorSpaceUtilities.h */,
@@ -350,6 +355,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B8F30B1419A631A70007B8C2 /* DDLog.m in Sources */,
+				B8610FF019D06D75007A4732 /* TPXClusterView.m in Sources */,
 				B854776A19A23ACA00289564 /* GCDAsyncUdpSocket.m in Sources */,
 				B8F30B1719A631A70007B8C2 /* DDDispatchQueueLogFormatter.m in Sources */,
 				B8F30B1319A631A70007B8C2 /* DDFileLogger.m in Sources */,
@@ -422,7 +428,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -455,7 +461,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
