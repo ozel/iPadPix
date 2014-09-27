@@ -24,8 +24,17 @@
 
 @interface  TPXClusterScene : SKScene
 
+- (void)addLabelContainer;
+
+- (void)addLabelForNode:(SKNode*)node labelKey:(id)key;
+
 @property ClusterFieldNode * clusters;
 
 
 @end
 
+@interface SKNode (SKmyNodes)
+
+- (void)cleanUpChildrenAndRemove:(SKNode*)node;
+
+@end

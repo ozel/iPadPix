@@ -12,6 +12,8 @@
 // Damping factor
 #define LP_FACTOR 0.99
 
+#define radiansToDegrees(x) (180/M_PI)*x
+
 @implementation MotionManagerSingleton
 
 static CMMotionManager* _motionManager;
@@ -38,8 +40,13 @@ static bool bActive;
 +(GLKVector3)getMotionVectorLPWithReference:(CMAttitude *)referenceAttitude{
     // Motion
     CMAttitude *attitude = self.getMotionManager.deviceMotion.attitude;
-    if(referenceAttitude)
+    if(referenceAttitude){
         [attitude multiplyByInverseOfAttitude:referenceAttitude];
+    }
+    CMQuaternion quat = attitude.quaternion;
+    float myRoll = atan2(2*(quat.y*quat.w - quat.x*quat.z), 1 - 2*quat.y*quat.y - 2*quat.z*quat.z) ;
+    float myPitch = atan2(2*(quat.x*quat.w + quat.y*quat.z), 1 - 2*quat.x*quat.x - 2*quat.z*quat.z);
+    float myYaw = asin(2*quat.x*quat.y + 2*quat.w*quat.z);
     
 //    if (_referenceAttitude==nil) {
 //        // Cache Start Orientation to calibrate the device. Wait for a short time to give MotionManager enough time to initialize
@@ -51,7 +58,7 @@ static bool bActive;
 ////        NSLog(@"roll: %f", attitude.roll);
 //    }
 
-    return [self lowPassWithVector: GLKVector3Make(attitude.yaw,attitude.roll,attitude.pitch)];
+    return [self lowPassWithVector: GLKVector3Make(myYaw,myRoll,myPitch)];
 }
 
 +(void)calibrate {
@@ -95,7 +102,7 @@ static bool bActive;
     vector.y = vector.y * LP_FACTOR + lastVector.y * (1.0 - LP_FACTOR);
     vector.z = vector.z * LP_FACTOR + lastVector.z * (1.0 - LP_FACTOR);
     
-    NSLog(@"filtered x %.2f y %.2f z %.2f", vector.x,vector.y,vector.z);
+//    NSLog(@"filtered x %.2f y %.2f z %.2f", vector.x,vector.y,vector.z);
 
     
     lastVector = vector;

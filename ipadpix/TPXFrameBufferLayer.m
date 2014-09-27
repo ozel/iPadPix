@@ -157,7 +157,7 @@ int localFrameHeight;
     }
     self.isFree = true;
     [self blit];
-    NSLog(@"tpx frame buffer %i cleared", self.index);
+//    NSLog(@"tpx frame buffer %i cleared", self.index);
 }
 
 -(void)setFrame:(CGRect)frame

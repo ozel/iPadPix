@@ -14,15 +14,16 @@
 
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
 {
-    UIView *hitView = [super hitTest:point withEvent:event];
+   CGRect frame = CGRectMake(0, 40,
+                              self.frame.size.width,
+                              self.frame.size.height - 40);
     
-    // If the hi\tView is THIS view, return nil and allow hitTest:withEvent: to
-    // continue traversing the hierarchy to find the underlying view.
-    if (hitView == self) {
-        return nil;
+    if (CGRectContainsPoint(frame, point)) {
+        return self;
     }
+
     // Else return the hitView (as it could be one of this view's buttons):
-    return hitView;
+    return nil;
 }
 
 @end
@@ -38,6 +39,68 @@ NSTimeInterval _lastUpdateTime;
 NSTimeInterval _dt;
 int _speed=START_SPEED;
 
+// Add a container as a scene instance variable.
+SKNode *labels;
+
+- (void)addLabelContainer
+{
+    labels = [SKNode node];
+    [self addChild:labels];
+}
+
+- (void)addLabelForNode:(SKNode*)node labelKey:(id)key
+{
+    //without dispatching this, the removing of labels terminates the app from time to time
+    dispatch_async(dispatch_get_main_queue(), ^{
+
+        SKLabelNode *label = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+        label.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeCenter;
+        //NOTE userData must be pre-initialized before
+        [node.userData setObject:label forKey:key];
+
+        if(key == (id)@"energyLabel"){
+            float energy = [[node.userData valueForKey:@"energy"] floatValue];
+            label.text = [NSString stringWithFormat:@"%.1f eV", energy];
+            label.fontSize = 20;
+            
+            SKSpriteNode* line = [SKSpriteNode spriteNodeWithColor:[SKColor whiteColor] size:CGSizeMake(128, 2.0)];
+            //        [line setPosition:CGPointMake(136.0, 50.0)];
+            line.alpha = 0.5;
+            line.zPosition = 0;
+            [label addChild:line];
+            [node.userData setObject:line forKey:@("line")];
+
+            
+        } else {
+            //cluster type
+            label.text = node.name;
+            label.fontSize = 40;
+
+        }
+        label.zPosition = 100000;
+
+        [labels addChild:label];
+        float duration = [[node.userData valueForKey:@"duration"] floatValue];
+
+    //    zoom.timingMode = SKActionTimingEaseOut;
+        SKAction * fade = [SKAction fadeAlphaTo:0.3 duration:duration+0.1];
+        fade.timingMode = SKActionTimingEaseIn;
+//        SKAction *remove = [SKAction removeFromParent];
+        SKAction * remove = [SKAction  runBlock:^{
+          [label removeAllChildren];
+          [label removeFromParent];
+        }];
+        [label runAction: [SKAction sequence:@[fade, remove]]];
+        
+
+    });
+}
+
+- (void)removeLabelForNode:(SKNode*)node
+{
+    [[node.userData objectForKey:@"label"] removeFromParent];
+    [node.userData removeObjectForKey:@"label"];
+}
 
 - (void)didFinishUpdate
 {
@@ -48,17 +111,22 @@ int _speed=START_SPEED;
 
 - (void) centerOnNode: (SKNode *) node
 {
-    CGPoint cameraPositionInScene = [node.scene convertPoint:node.position fromNode:node.parent];
-    node.parent.position = CGPointMake(node.parent.position.x - cameraPositionInScene.x,                                       node.parent.position.y - cameraPositionInScene.y);
+//    CGPoint cameraPositionInScene = [node.scene convertPoint:node.position fromNode:node.parent];
+//    node.parent.position = CGPointMake(node.parent.position.x - cameraPositionInScene.x,                                       node.parent.position.y - cameraPositionInScene.y);
 }
 
-// Increase speed after touch event up to 5 times.
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    if (_speed<MAX_SPEED && _speed>-MAX_SPEED) {
-        _speed+=20;
-    } else {
-        _speed=START_SPEED;
-    }
+    //    if (_speed<MAX_SPEED && _speed>-MAX_SPEED) {
+//        _speed+=20;
+//    } else {
+//        _speed=START_SPEED;
+//    }
+
+//    if(self.scene.view.paused==YES)
+//        self.scene.view.paused = NO;
+//    else
+//        self.scene.view.paused = YES;
+
 }
 
 -(void)update:(NSTimeInterval)currentTime {
@@ -75,6 +143,37 @@ int _speed=START_SPEED;
     if (self.clusters)
         [self.clusters scrollWith:_speed*_dt Dt:_dt];
     
+    //update labels
+    for (SKNode *node in self.clusters.children) {
+        SKLabelNode *infoLabel = (SKLabelNode*)[node.userData objectForKey:@"energyLabel"];
+        if (infoLabel) {
+            if (node.position.x < (0)){
+                SKSpriteNode *line = (SKSpriteNode*)[node.userData objectForKey:@"line"];
+                line.anchorPoint = (CGPointMake(0,0));
+                line.size = CGSizeMake((self.size.width/2)+node.position.x, 2);
+                
+                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+                infoLabel.position = CGPointMake(-self.size.width/2, node.position.y);
+            } else {
+                SKSpriteNode *line = (SKSpriteNode*)[node.userData objectForKey:@"line"];
+                line.anchorPoint = CGPointMake(1, 0);
+                line.size = CGSizeMake((self.size.width/2)-node.position.x, 2);
+                
+                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+                infoLabel.position = CGPointMake(self.size.width/2, node.position.y);
+            }
+        }
+        infoLabel = (SKLabelNode*)[node.userData objectForKey:@"typeLabel"];
+        if (infoLabel) {
+            if (node.position.x < (0)){
+                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+                infoLabel.position = CGPointMake(-self.size.width/2, node.position.y-40);
+            } else {
+                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+                infoLabel.position = CGPointMake(self.size.width/2, node.position.y-40);
+            }
+        }
+    }
 }
 
 @end
@@ -155,3 +254,12 @@ NSMutableArray* _stepsizes;
 
 @end
 
+@implementation SKNode (SKmyNodes)
+
+- (void)cleanUpChildrenAndRemove:(SKNode*)node {
+    for (SKNode *child in node.children) {
+        [self cleanUpChildrenAndRemove:child];
+    }
+    [node removeFromParent];
+}
+@end

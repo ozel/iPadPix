@@ -250,10 +250,6 @@ CGPoint defaultFocusPOI;
 	
 	self.manualHUDFocusView.hidden = YES;
     
-  
-
-
-    
     // setup and bind UDP server socket to port
   
     // Create High Priotity queue
@@ -414,6 +410,7 @@ CGPoint defaultFocusPOI;
     clusterField.name = @"clusterField";
     scene.clusters = clusterField;
     [scene addChild:scene.clusters];
+    [scene addLabelContainer];
     
 //    SKNode *camera = [SKNode node];
 //    camera.name = @"camera";
@@ -421,6 +418,58 @@ CGPoint defaultFocusPOI;
     
     [[self view] addSubview:skView];
     [skView presentScene:scene];
+//    [self.manualHUDFocusView removeFromSuperview];
+//    [skView addSubview:self.manualHUDFocusView];
+    
+    // Create and initialize a tap gesture
+    UIPanGestureRecognizer *panRecognizer = [[UIPanGestureRecognizer alloc]
+                                             initWithTarget:self action:@selector(respondToPanGesture:)];
+    
+    // Specify that the gesture must be a single tap
+    panRecognizer.maximumNumberOfTouches = 1;
+    
+    // Add the tap gesture recognizer to the view
+    [skView addGestureRecognizer:panRecognizer];
+    
+}
+
+- (IBAction)respondToPanGesture:(UIPanGestureRecognizer *)recognizer {
+    
+//    dispatch_async(dispatch_get_main_queue(), ^{
+    
+        CGPoint distance = [recognizer translationInView:scene.view];
+        
+        CGPoint location = [recognizer locationInView:scene.view];
+
+        SKShapeNode *line = [SKShapeNode node];
+        CGMutablePathRef pathToDraw = CGPathCreateMutable();
+        CGPathMoveToPoint(pathToDraw, NULL, location.x, location.y);
+        CGPathAddLineToPoint(pathToDraw, NULL, location.x, distance.y);
+        line.path = pathToDraw;
+
+        [line setStrokeColor:[UIColor redColor]];
+        SKAction * fade = [SKAction fadeOutWithDuration:1];
+        SKAction * remove = [SKAction  runBlock:^{
+            [line removeAllChildren];
+            [line removeFromParent];
+            }];
+        SKAction * sequence = [SKAction sequence:@[fade,remove]];
+
+        [scene addChild:line];
+        [line runAction:sequence];
+        CGPathRelease(pathToDraw);
+
+        float speed = -distance.y/200;
+        
+        if (speed > 1)
+            scene.speed=1;
+        else if (speed < 0)
+            scene.speed=0;
+        else
+            scene.speed = speed;
+
+//    });
+
 }
 
 - (void)viewDidDisappear:(BOOL)animated
@@ -827,7 +876,7 @@ CGPoint defaultFocusPOI;
     [focusTimer invalidate];
     
     
-    NSLog(@"timer count: %i", count);
+//    NSLog(@"timer count: %i", count);
     
     float lensPosition = self.lensPositionSlider.value;
     
@@ -836,8 +885,8 @@ CGPoint defaultFocusPOI;
     if (!self.videoDevice.isAdjustingFocus){
         // re-calibrate core motion
         //[MotionManagerSingleton calibrate];
-        
-        NSLog(@"focusPOI: %@", NSStringFromCGPoint(focusPOI));
+
+//        NSLog(@"focusPOI: %@", NSStringFromCGPoint(focusPOI));
         dispatch_async(dispatch_get_main_queue(), ^{
             
             //rescale focuspointer frame
@@ -904,7 +953,7 @@ CGPoint defaultFocusPOI;
             focusTimer= nil;
         });
     } else {
-        NSLog(@"start timer2");
+        NSLog(@"start timer again");
         focusTimer = [NSTimer scheduledTimerWithTimeInterval:0.25
                                                       target:self
                                                     selector:@selector(handleFPtimer:)
@@ -974,7 +1023,7 @@ withFilterContext:(id)filterContext
             float centerX = [[cluster valueForKey:@"center_x"] floatValue];
             float centerY = [[cluster valueForKey:@"center_y"] floatValue];
             float energy = [[cluster valueForKey:@"energy"] floatValue];
-            NSLog (@"clusterTOT: %@ size: %i centerx: %f centery: %f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
+            NSLog (@"clusterTOT: %@ size: %i centerx: %.1f centery: %.1f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
 //            NSLog(@"size xi: %i size yi: %i, size ei: %i ",xdata,ydata,edata);
 
 //            NSData * test = [cluster valueForKey:@"yi"];
@@ -1006,6 +1055,10 @@ withFilterContext:(id)filterContext
                 unsigned char ei[clusterSize];
                 
                 unsigned char maxTOT = 0;
+                unsigned char maxX = 0;
+                unsigned char maxY = 0;
+                unsigned char minX = 255;
+                unsigned char minY = 255;
                 
                 // get _character_ values (UTF8 numbers can be multiple bytes)
                 for(int i = 0; i < clusterSize; i++){
@@ -1015,7 +1068,20 @@ withFilterContext:(id)filterContext
                     if(ei[i] > maxTOT){
                         maxTOT = ei[i];
                     }
+                    if(xi[i] > maxX)
+                        maxX = xi[i];
+                    if(xi[i]< minX)
+                        minX = xi[i];
+                    if(yi[i] > maxY)
+                        maxY = yi[i];
+                    if(yi[i]< minX)
+                        minY = yi[i];
                 }
+
+                //cluster box size:
+                unsigned char width = maxX - minX;
+                unsigned char heigth = maxY - minY;
+
            
 //            for (int i=0; i < clusterSize; i++) {
 //                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
@@ -1036,6 +1102,7 @@ withFilterContext:(id)filterContext
                 }
 
 //                    SKSpriteNode *sprite = [SKSpriteNode spriteNodeWithColor:[SKColor redColor] size:CGSizeMake(256, 256)];
+//                SKSpriteNode *node = [[SKSpriteNode alloc] init];
                 SKSpriteNode *sprite = [[SKSpriteNode alloc] init];
                 NSData * data = [NSData dataWithBytes:framebuffer length:256*256*4];
                 SKTexture *tex = [SKTexture textureWithData:data size:CGSizeMake(256, 256)];
@@ -1061,35 +1128,112 @@ withFilterContext:(id)filterContext
                 [sprite setPosition:CGPointMake((centerX-128) * geoFactor,
                                                 (centerY-128) * geoFactor)];
 
-                [scene.clusters addChild:sprite];
-                
-                // set energy dependant scale and time factors
-                float scaleFactor = energy/40;
-                if (scaleFactor > 8.0)
-                    scaleFactor = 8.0;
-                
-                float timeScale = 2.0f*energy/2000;
-             
-                if(timeScale > 3.5)
-                    timeScale= 3.5f;
-                else if (timeScale < 2.0)
-                    timeScale = 2.0;
-                
-                float alpaFactor = 0.2*energy/1000;
-                if (alpaFactor > 1)
-                    alpaFactor = 1;
-                else if (alpaFactor < 0.5)
-                    alpaFactor = 0.5;
-                
-                SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
-                zoom.timingMode = SKActionTimingEaseOut;
-                SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale];
-//                fade.timingMode = SKActionTimingEaseOut;
-                SKAction *remove = [SKAction removeFromParent];
-//                [sprite runAction: [SKAction sequence:@[zoom, remove]]];
-                SKAction * zoomFade = [SKAction group:@[zoom, fade]];
-                
-                [sprite runAction: [SKAction sequence:@[zoomFade, remove]]];
+                //display cluster only if scene is not paused
+                if(scene.speed > 0){
+            
+                    // set energy dependant scale and time factors
+                    float scaleFactor = energy/40;
+                    if (scaleFactor > 8.0)
+                        scaleFactor = 8.0;
+                    else if (scaleFactor < 1.0)
+                        scaleFactor = 1.0;
+                    
+                    float timeScale = 2.0f*energy/2000;
+                 
+                    if(timeScale > 3.5)
+                        timeScale= 3.5f;
+                    else if (timeScale < 2.0)
+                        timeScale = 2.0;
+                    
+                    [sprite.userData setValue:@(timeScale) forKey:@"duration"];
+
+                    
+                    float alpaFactor = 0.2*energy/1000;
+                    if (alpaFactor > 1)
+                        alpaFactor = 1;
+                    else if (clusterSize < 5)
+                        alpaFactor = 0.9; //preserve visibility of small clusters
+                    else if (alpaFactor < 0.3)
+                        alpaFactor = 0.3;
+                    
+                    SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
+                    zoom.timingMode = SKActionTimingEaseOut;
+                    SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale];
+    //                fade.timingMode = SKActionTimingEaseOut;
+                    SKAction *remove = [SKAction removeFromParent];
+//                    SKAction * remove = [SKAction  runBlock:^{
+//                        [sprite removeAllChildren];
+//                        [sprite removeFromParent];
+//                    }];
+    //                [sprite runAction: [SKAction sequence:@[zoom, remove]]];
+                    SKAction * zoomFade = [SKAction group:@[zoom, fade]];
+                    
+                    //add energy and type label
+                    SKLabelNode *typeLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+                    typeLabel.verticalAlignmentMode = SKLabelVerticalAlignmentModeCenter;
+                    typeLabel.alpha = 0.9;
+
+
+                    SKLabelNode *energyLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+                    energyLabel.verticalAlignmentMode = SKLabelVerticalAlignmentModeCenter;
+                    energyLabel.text=[NSString stringWithFormat:@"%.1f eV", energy];
+                    energyLabel.fontSize = 6;
+
+
+                    //simple cluster identfification
+                    if (clusterSize > 4) {
+                        if (width > 5 && width > 5 && energy > 2000){
+                            sprite.name=@"alpha";
+                            typeLabel.fontSize = 9;
+                        } else {
+                            sprite.name=@"beta";
+                            typeLabel.fontSize = 7;
+
+                        }
+                    } else if (clusterSize < 5 ){
+                        sprite.name=@"gamma";
+                        typeLabel.fontSize = 9;
+
+                    }
+                    //
+                    ////    myLabel.position = CGPointMake(CGRectGetMidX(self.view.bounds),
+                    ////                                   CGRectGetMidY(self.view.bounds));
+                    //    myLabel.position = CGPointMake(0,0);
+                    
+                    if (typeLabel.text) {
+                        if(centerX < 128 && centerY < 128){
+                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+                            typeLabel.position = CGPointMake(-5,-6);
+                            energyLabel.position = CGPointMake(-5,0);
+                        } else if(centerX > 128 && centerY < 128){
+                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+                            typeLabel.position = CGPointMake(+5,-6);
+                            energyLabel.position = CGPointMake(+5,0);
+                        } else if(centerX < 128 && centerY > 128){
+                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+                            typeLabel.position = CGPointMake(-5,+6);
+                            energyLabel.position = CGPointMake(-5,0);
+                        } else if(centerX > 128 && centerY > 128){
+                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+                            typeLabel.position = CGPointMake(+5,+6);
+                            energyLabel.position = CGPointMake(+5,0);
+                        }
+                        if (scene.clusters.children.count < 6){
+//                            [sprite addChild:typeLabel];
+//                            [sprite addChild:energyLabel];
+                            [scene addLabelForNode:sprite labelKey:@"energyLabel"];
+                            [scene addLabelForNode:sprite labelKey:@"typeLabel"];
+                        }
+                    }
+//                    [node addChild:sprite];
+
+                    [scene.clusters addChild:sprite];
+                    [sprite runAction: [SKAction sequence:@[zoomFade, remove]]];
+                }
 #endif
             });
         }
