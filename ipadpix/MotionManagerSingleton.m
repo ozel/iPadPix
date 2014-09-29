@@ -25,7 +25,7 @@ static bool bActive;
 +(CMMotionManager*)getMotionManager {
     if (_motionManager==nil) {
         _motionManager=[[CMMotionManager alloc]init];
-        _motionManager.deviceMotionUpdateInterval=0.25;
+        _motionManager.deviceMotionUpdateInterval=0.1; //0.25;
         [_motionManager startDeviceMotionUpdates];
         bActive=true;
     } else if (bActive==false) {

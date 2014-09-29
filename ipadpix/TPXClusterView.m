@@ -48,52 +48,123 @@ SKNode *labels;
     [self addChild:labels];
 }
 
-- (void)addLabelForNode:(SKNode*)node labelKey:(id)key
+- (NSUInteger)getLabelCount
+{
+    return [labels.children count];
+}
+
+- (void)addLabelForNode:(SKNode*)node
 {
     //without dispatching this, the removing of labels terminates the app from time to time
-    dispatch_async(dispatch_get_main_queue(), ^{
+//    dispatch_async(dispatch_get_main_queue(), ^{
 
-        SKLabelNode *label = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
-        label.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeCenter;
+        SKLabelNode *energyLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+        energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeCenter;
         //NOTE userData must be pre-initialized before
-        [node.userData setObject:label forKey:key];
+        [node.userData setObject:energyLabel forKey:@"energyLabel"];
 
-        if(key == (id)@"energyLabel"){
-            float energy = [[node.userData valueForKey:@"energy"] floatValue];
-            label.text = [NSString stringWithFormat:@"%.1f eV", energy];
-            label.fontSize = 20;
-            
-            SKSpriteNode* line = [SKSpriteNode spriteNodeWithColor:[SKColor whiteColor] size:CGSizeMake(128, 2.0)];
-            //        [line setPosition:CGPointMake(136.0, 50.0)];
-            line.alpha = 0.5;
-            line.zPosition = 0;
-            [label addChild:line];
-            [node.userData setObject:line forKey:@("line")];
+        float energy = [[node.userData valueForKey:@"energy"] floatValue];
+        energyLabel.text = [NSString stringWithFormat:@"%.1f eV", energy];
+        energyLabel.fontSize = 20;
+        energyLabel.position = node.position; //just as intial position
+        energyLabel.userData = [NSMutableDictionary new];
+        
+        SKSpriteNode* underline = [SKSpriteNode spriteNodeWithColor:[SKColor whiteColor] size:CGSizeMake(125, 2.0)];
+        //        [line setPosition:CGPointMake(136.0, 50.0)];
+        underline.alpha = 0.5;
+        underline.zPosition = 0;
+        energyLabel.zPosition = 1;
+        [energyLabel addChild:underline];
+        [node.userData setObject:underline forKey:@("underline")];
 
-            
-        } else {
-            //cluster type
-            label.text = node.name;
-            label.fontSize = 40;
+        SKSpriteNode* pointerline = [SKSpriteNode spriteNodeWithColor:[SKColor whiteColor] size:CGSizeMake(100, 2.0)];
+        pointerline.alpha = 0.4;
+    
+        pointerline.zPosition = 0;
+        [energyLabel addChild:pointerline];
+        [node.userData setObject:pointerline forKey:@("pointerline")];
+        NSMutableArray *lineConstraints = [NSMutableArray new];
+    
+        [lineConstraints addObject:[SKConstraint orientToPoint:CGPointMake(0,0) inNode:node offset:[SKRange rangeWithConstantValue:0]]];
+        pointerline.constraints = lineConstraints;
+    
+        //cluster type
+        SKLabelNode *typeLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+        typeLabel.verticalAlignmentMode = SKLabelVerticalAlignmentModeCenter;
+        typeLabel.text = node.name;
+        typeLabel.fontSize = 40;
+        typeLabel.zPosition = 1;
+        typeLabel.position = CGPointMake(0, -22);
 
-        }
-        label.zPosition = 100000;
+        if([node.name isEqualToString:@"alpha"])
+            typeLabel.fontColor=[SKColor redColor];
+        else if ([node.name isEqualToString:@"beta"])
+            typeLabel.fontColor=[SKColor orangeColor];
+        else if ([node.name isEqualToString:@"gamma"])
+            typeLabel.fontColor=[SKColor yellowColor];
 
-        [labels addChild:label];
+        [energyLabel addChild:typeLabel];
+
         float duration = [[node.userData valueForKey:@"duration"] floatValue];
 
     //    zoom.timingMode = SKActionTimingEaseOut;
         SKAction * fade = [SKAction fadeAlphaTo:0.3 duration:duration+0.1];
         fade.timingMode = SKActionTimingEaseIn;
-//        SKAction *remove = [SKAction removeFromParent];
-        SKAction * remove = [SKAction  runBlock:^{
-          [label removeAllChildren];
-          [label removeFromParent];
-        }];
-        [label runAction: [SKAction sequence:@[fade, remove]]];
+        NSMutableArray *constraints = [NSMutableArray new];
+
+//        SKRange* range = [SKRange rangeWithConstantValue:0.0f];
+        
+ 
+        
+        SKConstraint *leftPosition = [SKConstraint positionX:[SKRange rangeWithConstantValue:-508] Y:[SKRange rangeWithLowerLimit:-(768/2)+20 upperLimit:(768/2)-20] ];
+        
+        SKConstraint *rightPosition = [SKConstraint positionX:[SKRange rangeWithConstantValue:+508] Y:[SKRange rangeWithLowerLimit:-(768/2)+20 upperLimit:(768/2)-20] ];
+
+        if(node.position.x < 0) {
+            [rightPosition setEnabled:NO];
+            [energyLabel.userData setValue:@"left" forKey:@("position")];
+        } else {
+            [leftPosition setEnabled:NO];
+            [energyLabel.userData setValue:@"right" forKey:@("position")];
+
+        }
+        [constraints addObject:leftPosition];
+        [constraints addObject:rightPosition];
+    
+        SKConstraint* clusterDistance = [SKConstraint distance:[SKRange rangeWithLowerLimit:40 upperLimit:250] toPoint:CGPointMake(0,0) inNode:node];
+        [constraints addObject:clusterDistance];
+    
+    
+        //keep distance from other labels
+        for (SKNode *labelNode in labels.children ){
+            id position = [energyLabel.userData valueForKey:@"position"];
+            if (position == [labelNode.userData valueForKey:@"position"]){
+                SKConstraint* minLabelDistance = [SKConstraint distance:[SKRange rangeWithLowerLimit:100] toPoint:CGPointMake(0,0) inNode:labelNode];
+                [constraints addObject:minLabelDistance];
+            }
+        }
+
+        //keep distance from other clusters
+        for (SKNode *clusterNode in node.parent.children ){
+            if (clusterNode != node){
+                SKConstraint* minClusterDistance = [SKConstraint distance:[SKRange rangeWithLowerLimit:150] toPoint:CGPointMake(0,0) inNode:clusterNode];
+                [constraints addObject:minClusterDistance];
+            }
+        }
+//
+
+    
+        energyLabel.constraints = constraints;
+
+        [energyLabel runAction: [SKAction sequence:@[fade]]];
+//        [CATransaction begin];
+//        [CATransaction setDisableActions: YES];
+        [labels addChild:energyLabel];
+//        [CATransaction commit];
+        //label will be removed in SKview update loop
         
 
-    });
+//    });
 }
 
 - (void)removeLabelForNode:(SKNode*)node
@@ -129,6 +200,10 @@ SKNode *labels;
 
 }
 
+long int distanceBetweenPoints(CGPoint first, CGPoint second) {
+    return lroundf(hypotf(second.x - first.x, second.y - first.y));
+}
+
 -(void)update:(NSTimeInterval)currentTime {
     
     // Needed for smooth scrolling. It's not guaranteed, that the update method is not called in fixed intervalls
@@ -139,40 +214,88 @@ SKNode *labels;
     }
     _lastUpdateTime = currentTime;
     
+//    [CATransaction begin];
+//    [CATransaction setDisableActions: YES];
+    
     // Scroll
     if (self.clusters)
         [self.clusters scrollWith:_speed*_dt Dt:_dt];
+    
+    for (SKLabelNode *label in labels.children){
+        if (label.alpha < 0.4){
+            [label removeAllActions];
+            [label removeAllChildren];
+            [label removeFromParent];
+        }
+    }
+    
+//    for (SKSpriteNode *sprite in self.clusters.children){
+//        if (sprite.alpha <= 0.1){
+//            [sprite removeAllActions];
+//            [sprite removeAllChildren];
+//            [sprite removeFromParent];
+//        }
+//    }
+    
+   
     
     //update labels
     for (SKNode *node in self.clusters.children) {
         SKLabelNode *infoLabel = (SKLabelNode*)[node.userData objectForKey:@"energyLabel"];
         if (infoLabel) {
             if (node.position.x < (0)){
-                SKSpriteNode *line = (SKSpriteNode*)[node.userData objectForKey:@"line"];
+                SKSpriteNode *line = (SKSpriteNode*)[node.userData objectForKey:@"underline"];
                 line.anchorPoint = (CGPointMake(0,0));
-                line.size = CGSizeMake((self.size.width/2)+node.position.x, 2);
+
+                line = (SKSpriteNode*)[node.userData objectForKey:@"pointerline"];
+                line.size = CGSizeMake(distanceBetweenPoints(node.position, CGPointMake(infoLabel.position.x+125, infoLabel.position.y)), 2);
+                line.anchorPoint = (CGPointMake(0,0));
+                [line setPosition:CGPointMake(+125, 0)];
+
                 
                 infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
-                infoLabel.position = CGPointMake(-self.size.width/2, node.position.y);
+                if ([infoLabel.children count] > 1) {
+                    SKLabelNode *typeLabel = [infoLabel.children objectAtIndex:3];
+                    typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+                }
+//                infoLabel.position = CGPointMake(-self.size.width/2, node.position.y);
+                //enable left position constraint
+                [[infoLabel.constraints objectAtIndex:0] setEnabled:YES];
+                [[infoLabel.constraints objectAtIndex:1] setEnabled:NO];
             } else {
-                SKSpriteNode *line = (SKSpriteNode*)[node.userData objectForKey:@"line"];
+                SKSpriteNode *line = (SKSpriteNode*)[node.userData objectForKey:@"underline"];
                 line.anchorPoint = CGPointMake(1, 0);
-                line.size = CGSizeMake((self.size.width/2)-node.position.x, 2);
+
+                line = (SKSpriteNode*)[node.userData objectForKey:@"pointerline"];
+                line.size = CGSizeMake(distanceBetweenPoints(node.position, CGPointMake(infoLabel.position.x-125, infoLabel.position.y)), 2);
+                line.anchorPoint = (CGPointMake(0,1));
+                [line setPosition:CGPointMake(-125, 0)];
+
                 
+                if ([infoLabel.children count] > 1) {
+                    SKLabelNode *typeLabel = [infoLabel.children objectAtIndex:3];
+                    typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+                }
                 infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
-                infoLabel.position = CGPointMake(self.size.width/2, node.position.y);
+                //enable right position constraint
+                [[infoLabel.constraints objectAtIndex:0] setEnabled:NO];
+                [[infoLabel.constraints objectAtIndex:1] setEnabled:YES];
+
+                
+//                infoLabel.position = CGPointMake(self.size.width/2, node.position.y);
             }
         }
-        infoLabel = (SKLabelNode*)[node.userData objectForKey:@"typeLabel"];
-        if (infoLabel) {
-            if (node.position.x < (0)){
-                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
-                infoLabel.position = CGPointMake(-self.size.width/2, node.position.y-40);
-            } else {
-                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
-                infoLabel.position = CGPointMake(self.size.width/2, node.position.y-40);
-            }
-        }
+//        [CATransaction commit];
+//        infoLabel = (SKLabelNode*)[node.userData objectForKey:@"typeLabel"];
+//        if (infoLabel) {
+//            if (node.position.x < (0)){
+//                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+//                infoLabel.position = CGPointMake(-self.size.width/2, node.position.y-40);
+//            } else {
+//                infoLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
+//                infoLabel.position = CGPointMake(self.size.width/2, node.position.y-40);
+//            }
+//        }
     }
 }
 

@@ -313,14 +313,14 @@ CGPoint defaultFocusPOI;
 
     
     //        overlayImageView = [[UIImageView alloc] initWithFrame:self.view.frame];
-    overlayImageView = [[UIImageView alloc] initWithFrame:focusPointer];
-    overlayImageView.frame = CGRectIntegral(r);
+//    overlayImageView = [[UIImageView alloc] initWithFrame:focusPointer];
+//    overlayImageView.frame = CGRectIntegral(r);
 
     r.origin = defaultFocusPOI;
     focusPointer = r;
     
     //old full-frame buffer
-    fBuffer = [TPXFrameBufferLayer createLayerWithFrame:focusPointer Index:999];
+//    fBuffer = [TPXFrameBufferLayer createLayerWithFrame:focusPointer Index:999];
 //    fBuffer.contentsScale = [[UIScreen mainScreen] scale]*2;
     
     //new cluster frame buffer array
@@ -351,14 +351,14 @@ CGPoint defaultFocusPOI;
 
     
     [[self view].layer addSublayer:fpFrame];
-    [overlayImageView.layer addSublayer:fBuffer];
+//    [overlayImageView.layer addSublayer:fBuffer];
     
 //    [overlayImageView.layer setBackgroundColor:[UIColor redColor].CGColor];
     
     // Configure the sprite kit view
     skView = [[SKView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     
-    [skView addSubview:overlayImageView];
+//    [skView addSubview:overlayImageView];
 
 //    skView = [[SKView alloc] initWithFrame:self.view.bounds];
 //      skView = [[SKView alloc] initWithFrame:focusPointer];
@@ -910,11 +910,11 @@ CGPoint defaultFocusPOI;
 
 
          
-            fBuffer.transform = CATransform3DMakeScale(3*(1-lensPosition), 3*(1-lensPosition), 1);
+//            fBuffer.transform = CATransform3DMakeScale(3*(1-lensPosition), 3*(1-lensPosition), 1);
 
            
             dispatch_async(dispatch_get_main_queue(), ^{
-                fBuffer.opacity=0;
+//                fBuffer.opacity=0;
                 CABasicAnimation* fadeAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
                 fadeAnimation.fromValue = @1.0;
                 fadeAnimation.toValue = @0.5;
@@ -936,7 +936,7 @@ CGPoint defaultFocusPOI;
                 group.animations = [NSArray arrayWithObjects:fadeAnimation, zoomAnimation, nil];
                 group.delegate = self;
                 [group setValue:@"groupFadeZoom" forKey:@"animationName"];
-                [group setValue:fBuffer forKey:@"parentLayer"];
+//                [group setValue:fBuffer forKey:@"parentLayer"];
        
                 [fBuffer addAnimation:group forKey:@"groupFadeZoom"];
                 
@@ -967,7 +967,7 @@ CGPoint defaultFocusPOI;
          NSString *animationName = [animation valueForKey:@"animationName"];
         if ([animationName isEqualToString:@"groupFadeZoom"])
         {
-            [fBuffer clear];
+//            [fBuffer clear];
 //            NSLog(@"There were %i sublayers",[overlayImageView.layer.sublayers count]);
 //            CALayer *layer = [animation valueForKey:@"parentLayer"];
 //            [layer removeAllAnimations];
@@ -1074,7 +1074,7 @@ withFilterContext:(id)filterContext
                         minX = xi[i];
                     if(yi[i] > maxY)
                         maxY = yi[i];
-                    if(yi[i]< minX)
+                    if(yi[i]< minY)
                         minY = yi[i];
                 }
 
@@ -1128,8 +1128,8 @@ withFilterContext:(id)filterContext
                 [sprite setPosition:CGPointMake((centerX-128) * geoFactor,
                                                 (centerY-128) * geoFactor)];
 
-                //display cluster only if scene is not paused
-                if(scene.speed > 0){
+                //display cluster only if scene speed is forward
+                if(scene.speed >= 1){
             
                     // set energy dependant scale and time factors
                     float scaleFactor = energy/40;
@@ -1159,80 +1159,38 @@ withFilterContext:(id)filterContext
                     SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
                     zoom.timingMode = SKActionTimingEaseOut;
                     SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale];
-    //                fade.timingMode = SKActionTimingEaseOut;
                     SKAction *remove = [SKAction removeFromParent];
 //                    SKAction * remove = [SKAction  runBlock:^{
 //                        [sprite removeAllChildren];
 //                        [sprite removeFromParent];
 //                    }];
-    //                [sprite runAction: [SKAction sequence:@[zoom, remove]]];
                     SKAction * zoomFade = [SKAction group:@[zoom, fade]];
                     
-                    //add energy and type label
-                    SKLabelNode *typeLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
-                    typeLabel.verticalAlignmentMode = SKLabelVerticalAlignmentModeCenter;
-                    typeLabel.alpha = 0.9;
-
-
-                    SKLabelNode *energyLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
-                    energyLabel.verticalAlignmentMode = SKLabelVerticalAlignmentModeCenter;
-                    energyLabel.text=[NSString stringWithFormat:@"%.1f eV", energy];
-                    energyLabel.fontSize = 6;
-
-
                     //simple cluster identfification
-                    if (clusterSize > 4) {
-                        if (width > 5 && width > 5 && energy > 2000){
+                    if (clusterSize > 3) {
+                        if (width > 3 && heigth > 3 && energy > 1500){
                             sprite.name=@"alpha";
-                            typeLabel.fontSize = 9;
-                        } else {
-                            sprite.name=@"beta";
-                            typeLabel.fontSize = 7;
-
+                       } else {
+                           if(width/heigth <= 0.75 || width/heigth >= 1.5 ){
+                             sprite.name=@"beta";
+                           } else if (energy > 1500 ){
+                               sprite.name=@"alpha";
+                           } else {
+                               sprite.name=@"beta";
+                           }
                         }
-                    } else if (clusterSize < 5 ){
+                    } else if (clusterSize <= 3){
                         sprite.name=@"gamma";
-                        typeLabel.fontSize = 9;
-
+                    } else {
+                        NSLog(@"unclassified cluster");
                     }
-                    //
-                    ////    myLabel.position = CGPointMake(CGRectGetMidX(self.view.bounds),
-                    ////                                   CGRectGetMidY(self.view.bounds));
-                    //    myLabel.position = CGPointMake(0,0);
-                    
-                    if (typeLabel.text) {
-                        if(centerX < 128 && centerY < 128){
-                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
-                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
-                            typeLabel.position = CGPointMake(-5,-6);
-                            energyLabel.position = CGPointMake(-5,0);
-                        } else if(centerX > 128 && centerY < 128){
-                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
-                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
-                            typeLabel.position = CGPointMake(+5,-6);
-                            energyLabel.position = CGPointMake(+5,0);
-                        } else if(centerX < 128 && centerY > 128){
-                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
-                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeRight;
-                            typeLabel.position = CGPointMake(-5,+6);
-                            energyLabel.position = CGPointMake(-5,0);
-                        } else if(centerX > 128 && centerY > 128){
-                            typeLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
-                            energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
-                            typeLabel.position = CGPointMake(+5,+6);
-                            energyLabel.position = CGPointMake(+5,0);
-                        }
-                        if (scene.clusters.children.count < 6){
-//                            [sprite addChild:typeLabel];
-//                            [sprite addChild:energyLabel];
-                            [scene addLabelForNode:sprite labelKey:@"energyLabel"];
-                            [scene addLabelForNode:sprite labelKey:@"typeLabel"];
-                        }
+                        
+                    if (([scene getLabelCount]/4) < 3){
+                        [scene addLabelForNode:sprite];
                     }
-//                    [node addChild:sprite];
 
                     [scene.clusters addChild:sprite];
-                    [sprite runAction: [SKAction sequence:@[zoomFade, remove]]];
+                    [sprite runAction: [SKAction sequence:@[zoomFade,remove]]];
                 }
 #endif
             });
@@ -1269,7 +1227,7 @@ withFilterContext:(id)filterContext
                 NSArray *d = [line componentsSeparatedByString:@"\t"];
     //            NSLog(@"pixels: %@",d);
                 if ([d count] == 3){
-                    [fBuffer setPixelWithX:[d[0] intValue] y:[d[1] intValue] counts:[d[2] intValue]];
+//                    [fBuffer setPixelWithX:[d[0] intValue] y:[d[1] intValue] counts:[d[2] intValue]];
     //                NSLog(@"%08x TOT:%i",fBuffer.framebuffer[ ([d[1] intValue] * 255) + [d[0] intValue]], [d[2] intValue]);
                 }
             }
@@ -1280,7 +1238,7 @@ withFilterContext:(id)filterContext
 
           
             dispatch_async(dispatch_get_main_queue(), ^{
-                [fBuffer blit];
+//                [fBuffer blit];
                 focusTimer = [NSTimer scheduledTimerWithTimeInterval:0
                                                       target:self
                                                     selector:@selector(handleFPtimer:)

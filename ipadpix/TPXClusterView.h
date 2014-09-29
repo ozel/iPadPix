@@ -25,8 +25,8 @@
 @interface  TPXClusterScene : SKScene
 
 - (void)addLabelContainer;
-
-- (void)addLabelForNode:(SKNode*)node labelKey:(id)key;
+- (NSUInteger)getLabelCount;
+- (void)addLabelForNode:(SKNode*)node;
 
 @property ClusterFieldNode * clusters;
 
