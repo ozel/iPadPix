@@ -20,10 +20,15 @@ UIView * fPview;
 SKView * skView;
 TPXClusterScene * scene;
 CALayer * fpFrame;
+BOOL demo_mode;
+BOOL record_mode;
 
 @interface AAPLCameraViewController : UIViewController
 
 - (SKScene *)unarchiveFromFile:(NSString *)file;
+
++ (NSURL*)applicationDataDirectory;
+
 
 @property (nonatomic) CGRect focusPointer;
 @property (nonatomic) TPXFrameBufferLayer * fBuffer;

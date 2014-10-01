@@ -69,6 +69,7 @@ static UIColor* CONTROL_NORMAL_COLOR = nil;
 static UIColor* CONTROL_HIGHLIGHT_COLOR = nil;
 
 NSTimer *focusTimer = nil;
+NSTimer *demoTimer = nil;
 dispatch_queue_t networkQueue;
 CGPoint defaultFocusPOI;
 
@@ -221,14 +222,7 @@ CGPoint defaultFocusPOI;
             NSLog(@"simulator mode or error: %@", error);
         }
         
-  
-       
-     
-
-      
-
-
-		
+  		
         dispatch_async(dispatch_get_main_queue(), ^{
 			[self configureManualHUD];
 
@@ -258,6 +252,9 @@ CGPoint defaultFocusPOI;
     
     dispatch_set_target_queue(networkQueue, high);
     
+    demo_mode = false;
+    record_mode = false;
+   
     // Create UDP Socket
     asyncSocket = [[GCDAsyncUdpSocket alloc] initWithDelegate:self delegateQueue:networkQueue];
 //    asyncSocket = [[GCDAsyncUdpSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
@@ -276,6 +273,15 @@ CGPoint defaultFocusPOI;
         exit(1);
     }
     NSLog(@"Udp server started on port %hu", [asyncSocket localPort]);
+    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                     target:self
+                                   selector:@selector(handleDemoTimer:)
+                                   userInfo:nil
+                                    repeats:NO];
+
+    //set this to start overriding clusters from nr. 0
+//    [[NSUserDefaults standardUserDefaults] setValue:@(0) forKey:@"demo_cluster_count"];
+
 }
 
 
@@ -363,8 +369,7 @@ CGPoint defaultFocusPOI;
 //    skView = [[SKView alloc] initWithFrame:self.view.bounds];
 //      skView = [[SKView alloc] initWithFrame:focusPointer];
     
-    skView.showsFPS = YES;
-    skView.showsNodeCount = YES;
+
 //    [skView setFrame:({
 //        CGRect frame = skView.frame;
 //        
@@ -431,42 +436,82 @@ CGPoint defaultFocusPOI;
     // Add the tap gesture recognizer to the view
     [skView addGestureRecognizer:panRecognizer];
     
+    UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:    self action:@selector(respondToSingleTap:)];
+    singleTap.numberOfTapsRequired = 1;
+    [skView addGestureRecognizer:singleTap];
+    
+    UITapGestureRecognizer *fiveTap = [[UITapGestureRecognizer alloc] initWithTarget:   self action:@selector(respondToFiveTap:)];
+    fiveTap.numberOfTapsRequired = 1;
+    fiveTap.numberOfTouchesRequired = 4;
+    [skView addGestureRecognizer:fiveTap];
+    
+    [singleTap requireGestureRecognizerToFail:fiveTap];
+    
 }
+
+- (void)respondToSingleTap:(UIPanGestureRecognizer *)recognizer {
+     if (recognizer.state == UIGestureRecognizerStateEnded){
+        //toggle between stop and play
+        if (scene.speed > 0)
+            scene.speed=0;
+        else if (scene.speed < 1)
+            scene.speed=1;
+     }
+    
+}
+
+- (void)respondToFiveTap:(UIPanGestureRecognizer *)recognizer {
+    
+    if (recognizer.state == UIGestureRecognizerStateEnded){
+        dispatch_async(dispatch_get_main_queue(), ^{
+            record_mode = !record_mode;
+            if(record_mode){
+                NSLog(@"-------- Clusters are now recorded.");
+                [fpFrame setBorderColor:[UIColor redColor].CGColor];
+
+            } else {
+                NSLog(@"-------- Stopped recording of clusters.");
+                [fpFrame setBorderColor:[UIColor yellowColor].CGColor];
+            }
+        });
+    }
+}
+
 
 - (IBAction)respondToPanGesture:(UIPanGestureRecognizer *)recognizer {
     
 //    dispatch_async(dispatch_get_main_queue(), ^{
     
-        CGPoint distance = [recognizer translationInView:scene.view];
-        
-        CGPoint location = [recognizer locationInView:scene.view];
-
-        SKShapeNode *line = [SKShapeNode node];
-        CGMutablePathRef pathToDraw = CGPathCreateMutable();
-        CGPathMoveToPoint(pathToDraw, NULL, location.x, location.y);
-        CGPathAddLineToPoint(pathToDraw, NULL, location.x, distance.y);
-        line.path = pathToDraw;
-
-        [line setStrokeColor:[UIColor redColor]];
-        SKAction * fade = [SKAction fadeOutWithDuration:1];
-        SKAction * remove = [SKAction  runBlock:^{
-            [line removeAllChildren];
-            [line removeFromParent];
-            }];
-        SKAction * sequence = [SKAction sequence:@[fade,remove]];
-
-        [scene addChild:line];
-        [line runAction:sequence];
-        CGPathRelease(pathToDraw);
-
-        float speed = -distance.y/200;
-        
-        if (speed > 1)
-            scene.speed=1;
-        else if (speed < 0)
-            scene.speed=0;
-        else
-            scene.speed = speed;
+//        CGPoint distance = [recognizer translationInView:scene.view];
+//        
+//        CGPoint location = [recognizer locationInView:scene.view];
+//
+//        SKShapeNode *line = [SKShapeNode node];
+//        CGMutablePathRef pathToDraw = CGPathCreateMutable();
+//        CGPathMoveToPoint(pathToDraw, NULL, location.x, location.y);
+//        CGPathAddLineToPoint(pathToDraw, NULL, location.x, distance.y);
+//        line.path = pathToDraw;
+//
+//        [line setStrokeColor:[UIColor redColor]];
+//        SKAction * fade = [SKAction fadeOutWithDuration:1];
+//        SKAction * remove = [SKAction  runBlock:^{
+//            [line removeAllChildren];
+//            [line removeFromParent];
+//            }];
+//        SKAction * sequence = [SKAction sequence:@[fade,remove]];
+//
+//        [scene addChild:line];
+//        [line runAction:sequence];
+//        CGPathRelease(pathToDraw);
+//
+//        float speed = -distance.y/200;
+//        
+//        if (speed > 1)
+//            scene.speed=1;
+//        else if (speed < 0)
+//            scene.speed=0;
+//        else
+//            scene.speed = speed;
 
 //    });
 
@@ -990,211 +1035,36 @@ withFilterContext:(id)filterContext
     // the json object returns the opriginal Avro bytes as UTF8 strings, this means numbers > 194 are stored in two bytes
     // and any zero bytes terminate the string early
     // TODO: enable of parsing xi and yi zero values, ei should be never zero
-    NSData *fromAvro = [avro JSONObjectFromData:data forSchemaNamed:@"tpxFrame" error:&error] ;
+    NSDictionary *fromAvro = [avro JSONObjectFromData:data forSchemaNamed:@"tpxFrame" error:&error] ;
     if (!error) {
-//    NSLog (@"%@",fromAvro);
-//        NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
-      
-        //save current device orientation as reference
-        CMAttitude * attitude = [MotionManagerSingleton getAttitude];
-        //                if(attitude==nil){
-        //                    //during init phase we don't have a proper attitude, yet
-        //                    attitude = [[CMAttitude alloc] init];
-        //                }
-
-        NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];
-        int counts = (int)[clusters count];
-        NSLog (@"got %i avro clusters", counts);
-
-        NSDictionary * cluster;
-     
-       
-        for (cluster in clusters) {
-            // UTF8 string length is in bytes and thus missleading if there are composed characters,
-            // therefore we have to extract the number of composed characters with this custom category function
-            int xdata = (int) [[cluster valueForKey:@"xi"] getNumberOfCharacters];
-            int ydata = (int) [[cluster valueForKey:@"yi"] getNumberOfCharacters];
-            int edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
-            int clusterSize = xdata;
-            if(xdata != ydata && xdata != edata && ydata != edata){
-                NSLog(@"WARNING: non equal byte length ------------------------");
+        [demoTimer invalidate];
+        demoTimer = nil;
+        skView.showsFPS = NO;
+        skView.showsNodeCount = NO;
+        if(record_mode){
+            NSURL * prefix = [AAPLCameraViewController applicationDataDirectory];
+//            prefix = [prefix URLByAppendingPathComponent:@"demo_clusters"];
+            long int count = [[[NSUserDefaults standardUserDefaults] valueForKey:@"demo_cluster_count"] integerValue];
+            count++;
+            NSLog(@"-------- saving cluster nr. %li", count);
+            NSString *path = [[prefix URLByAppendingPathComponent:[NSString stringWithFormat:@"%li", count]] path];
+            NSLog(@"%@", path);
+            if([NSKeyedArchiver archiveRootObject:fromAvro toFile:path]){
+                NSLog(@"-------- Cluster written.");
+                [[NSUserDefaults standardUserDefaults] setValue:@(count) forKey:@"demo_cluster_count"];
+            } else {
+                 NSLog(@"-------- Cluster not written. ");
             }
-        
-            float centerX = [[cluster valueForKey:@"center_x"] floatValue];
-            float centerY = [[cluster valueForKey:@"center_y"] floatValue];
-            float energy = [[cluster valueForKey:@"energy"] floatValue];
-            NSLog (@"clusterTOT: %@ size: %i centerx: %.1f centery: %.1f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
-//            NSLog(@"size xi: %i size yi: %i, size ei: %i ",xdata,ydata,edata);
-
-//            NSData * test = [cluster valueForKey:@"yi"];
-//            NSData * test = [NSKeyedArchiver archivedDataWithRootObject:[cluster valueForKey:@"yi"]];
-//            uint8_t * bytePtr = (uint8_t  * )[test bytes];
-//              unichar bytePtr[clusterSize];
-//              [[cluster valueForKey:@"yi"] getCharacters:bytePtr range:NSMakeRange(0, [[cluster valueForKey:@"yi"] length])];
-//              NSInteger totalData = clusterSize;
-//            NSInteger totalData = [test length] / sizeof(uint8_t);
-//              for (int i = 0 ; i < totalData; i ++)
-//              {
-//                  NSLog(@"data byte chunk : %x", bytePtr[i]);
-//              }
-//            NSLog(@"test length: %i", totalData);
-
-//            NSData* test = [[[cluster valueForKey:@"xi"] dataUsingEncoding:NSASCIIStringEncoding];
-//            NSData* test = [[[cluster valueForKey:@"xi"] cStringUsingEncoding:NSASCIIStringEncoding]];
-
-
-//            NSLog(@"%@", test);
-            
-            //TODO: is dispatching here better for fast packet processing?
-            dispatch_async(dispatch_get_main_queue(), ^{
-
-                uint32_t framebuffer[256*256]={0};
-                
-                unsigned char xi[clusterSize];
-                unsigned char yi[clusterSize];
-                unsigned char ei[clusterSize];
-                
-                unsigned char maxTOT = 0;
-                unsigned char maxX = 0;
-                unsigned char maxY = 0;
-                unsigned char minX = 255;
-                unsigned char minY = 255;
-                
-                // get _character_ values (UTF8 numbers can be multiple bytes)
-                for(int i = 0; i < clusterSize; i++){
-                    xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
-                    yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
-                    ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
-                    if(ei[i] > maxTOT){
-                        maxTOT = ei[i];
-                    }
-                    if(xi[i] > maxX)
-                        maxX = xi[i];
-                    if(xi[i]< minX)
-                        minX = xi[i];
-                    if(yi[i] > maxY)
-                        maxY = yi[i];
-                    if(yi[i]< minY)
-                        minY = yi[i];
-                }
-
-                //cluster box size:
-                unsigned char width = maxX - minX;
-                unsigned char heigth = maxY - minY;
-
-           
-//            for (int i=0; i < clusterSize; i++) {
-//                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
-//                
-//            }
-
-#if 0
-              TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY Energy:energy];
-                [localFBuffer blit];
-                [localFBuffer animateWithLensPosition:self.lensPositionSlider.value];
-
-#else
-                
-                uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
-                for (int i = 0; i < clusterSize; i++) {
-                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+6))];
-
-                }
-
-//                    SKSpriteNode *sprite = [SKSpriteNode spriteNodeWithColor:[SKColor redColor] size:CGSizeMake(256, 256)];
-//                SKSpriteNode *node = [[SKSpriteNode alloc] init];
-                SKSpriteNode *sprite = [[SKSpriteNode alloc] init];
-                NSData * data = [NSData dataWithBytes:framebuffer length:256*256*4];
-                SKTexture *tex = [SKTexture textureWithData:data size:CGSizeMake(256, 256)];
-                tex.filteringMode = SKTextureFilteringNearest;
-                sprite.texture = tex;
-                sprite.size = tex.size;
-                sprite.alpha = 1;
-                sprite.anchorPoint = CGPointMake((centerX/256), (centerY/256));
-
-                sprite.userData = [NSMutableDictionary dictionary];
-                if(attitude){
-                    [sprite.userData setObject:attitude forKey:@"attitude"];
-                }
-                [sprite.userData setValue:@(energy) forKey:@"energy"];
-
-
-                // sprite scale must be in sync with fpFrame size
-                float geoFactor = (768.0/256.0) * (1-self.lensPositionSlider.value);
-                sprite.scale = (geoFactor);
-
-//                [sprite setScale:10.0f];
-//                [sprite setPosition:CGPointMake((focusPointer.size.width/2),(focusPointer.size.height/2))];
-                [sprite setPosition:CGPointMake((centerX-128) * geoFactor,
-                                                (centerY-128) * geoFactor)];
-
-                //display cluster only if scene speed is forward
-                if(scene.speed >= 1){
-            
-                    // set energy dependant scale and time factors
-                    float scaleFactor = energy/40;
-                    if (scaleFactor > 8.0)
-                        scaleFactor = 8.0;
-                    else if (scaleFactor < 1.0)
-                        scaleFactor = 1.0;
-                    
-                    float timeScale = 2.0f*energy/2000;
-                 
-                    if(timeScale > 3.5)
-                        timeScale= 3.5f;
-                    else if (timeScale < 2.0)
-                        timeScale = 2.0;
-                    
-                    [sprite.userData setValue:@(timeScale) forKey:@"duration"];
-
-                    
-                    float alpaFactor = 0.2*energy/1000;
-                    if (alpaFactor > 1)
-                        alpaFactor = 1;
-                    else if (clusterSize < 5)
-                        alpaFactor = 0.9; //preserve visibility of small clusters
-                    else if (alpaFactor < 0.3)
-                        alpaFactor = 0.3;
-                    
-                    SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
-                    zoom.timingMode = SKActionTimingEaseOut;
-                    SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale];
-                    SKAction *remove = [SKAction removeFromParent];
-//                    SKAction * remove = [SKAction  runBlock:^{
-//                        [sprite removeAllChildren];
-//                        [sprite removeFromParent];
-//                    }];
-                    SKAction * zoomFade = [SKAction group:@[zoom, fade]];
-                    
-                    //simple cluster identfification
-                    if (clusterSize > 3) {
-                        if (width > 3 && heigth > 3 && energy > 1500){
-                            sprite.name=@"alpha";
-                       } else {
-                           if(width/heigth <= 0.75 || width/heigth >= 1.5 ){
-                             sprite.name=@"beta";
-                           } else if (energy > 1500 ){
-                               sprite.name=@"alpha";
-                           } else {
-                               sprite.name=@"beta";
-                           }
-                        }
-                    } else if (clusterSize <= 3){
-                        sprite.name=@"gamma";
-                    } else {
-                        NSLog(@"unclassified cluster");
-                    }
-                        
-                    if (([scene getLabelCount]/4) < 3){
-                        [scene addLabelForNode:sprite];
-                    }
-
-                    [scene.clusters addChild:sprite];
-                    [sprite runAction: [SKAction sequence:@[zoomFade,remove]]];
-                }
-#endif
-            });
         }
+        dispatch_async(dispatch_get_main_queue(), ^{
+        [self parseClusters:fromAvro];
+            //reset timer
+            demoTimer = [NSTimer scheduledTimerWithTimeInterval:3
+                                                     target:self
+                                                   selector:@selector(handleDemoTimer:)
+                                                   userInfo:nil
+                                                    repeats:NO];
+        });
     } else {
         NSLog (@"got raw frame");
         //NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
@@ -1250,5 +1120,272 @@ withFilterContext:(id)filterContext
     }
 
 }
+
+
+-(void)parseClusters:(NSDictionary *)fromAvro {
+    //    NSLog (@"%@",fromAvro);
+    //        NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
+    
+    //save current device orientation as reference
+    CMAttitude * attitude = [MotionManagerSingleton getAttitude];
+    //                if(attitude==nil){
+    //                    //during init phase we don't have a proper attitude, yet
+    //                    attitude = [[CMAttitude alloc] init];
+    //                }
+    
+    NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];
+    int counts = (int)[clusters count];
+    NSLog (@"got %i avro clusters", counts);
+    
+    NSDictionary * cluster;
+    
+    
+    for (cluster in clusters) {
+        // UTF8 string length is in bytes and thus missleading if there are composed characters,
+        // therefore we have to extract the number of composed characters with this custom category function
+        int xdata = (int) [[cluster valueForKey:@"xi"] getNumberOfCharacters];
+        int ydata = (int) [[cluster valueForKey:@"yi"] getNumberOfCharacters];
+        int edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
+        int clusterSize = xdata;
+        if(xdata != ydata && xdata != edata && ydata != edata){
+            NSLog(@"WARNING: non equal byte length ------------------------");
+        }
+        
+        float centerX = [[cluster valueForKey:@"center_x"] floatValue];
+        float centerY = [[cluster valueForKey:@"center_y"] floatValue];
+        float energy = [[cluster valueForKey:@"energy"] floatValue];
+        NSLog (@"clusterTOT: %@ size: %i centerx: %.1f centery: %.1f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
+        //            NSLog(@"size xi: %i size yi: %i, size ei: %i ",xdata,ydata,edata);
+        
+        //            NSData * test = [cluster valueForKey:@"yi"];
+        //            NSData * test = [NSKeyedArchiver archivedDataWithRootObject:[cluster valueForKey:@"yi"]];
+        //            uint8_t * bytePtr = (uint8_t  * )[test bytes];
+        //              unichar bytePtr[clusterSize];
+        //              [[cluster valueForKey:@"yi"] getCharacters:bytePtr range:NSMakeRange(0, [[cluster valueForKey:@"yi"] length])];
+        //              NSInteger totalData = clusterSize;
+        //            NSInteger totalData = [test length] / sizeof(uint8_t);
+        //              for (int i = 0 ; i < totalData; i ++)
+        //              {
+        //                  NSLog(@"data byte chunk : %x", bytePtr[i]);
+        //              }
+        //            NSLog(@"test length: %i", totalData);
+        
+        //            NSData* test = [[[cluster valueForKey:@"xi"] dataUsingEncoding:NSASCIIStringEncoding];
+        //            NSData* test = [[[cluster valueForKey:@"xi"] cStringUsingEncoding:NSASCIIStringEncoding]];
+        
+        
+        //            NSLog(@"%@", test);
+        
+        //TODO: is dispatching here better for fast packet processing?
+//        dispatch_async(dispatch_get_main_queue(), ^{
+        
+            uint32_t framebuffer[256*256]={0};
+            
+            unsigned char xi[clusterSize];
+            unsigned char yi[clusterSize];
+            unsigned char ei[clusterSize];
+            
+            unsigned char maxTOT = 0;
+            unsigned char maxX = 0;
+            unsigned char maxY = 0;
+            unsigned char minX = 255;
+            unsigned char minY = 255;
+            
+            // get _character_ values (UTF8 numbers can be multiple bytes)
+            for(int i = 0; i < clusterSize; i++){
+                xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
+                yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
+                ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
+                if(ei[i] > maxTOT){
+                    maxTOT = ei[i];
+                }
+                if(xi[i] > maxX)
+                    maxX = xi[i];
+                if(xi[i]< minX)
+                    minX = xi[i];
+                if(yi[i] > maxY)
+                    maxY = yi[i];
+                if(yi[i]< minY)
+                    minY = yi[i];
+            }
+            
+            //cluster box size:
+            unsigned char width = maxX - minX;
+            unsigned char heigth = maxY - minY;
+            
+            
+            //            for (int i=0; i < clusterSize; i++) {
+            //                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
+            //
+            //            }
+            
+#if 0
+            TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY Energy:energy];
+            [localFBuffer blit];
+            [localFBuffer animateWithLensPosition:self.lensPositionSlider.value];
+            
+#else
+            
+            uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
+            for (int i = 0; i < clusterSize; i++) {
+                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+6))];
+                
+            }
+            
+            //                    SKSpriteNode *sprite = [SKSpriteNode spriteNodeWithColor:[SKColor redColor] size:CGSizeMake(256, 256)];
+            //                SKSpriteNode *node = [[SKSpriteNode alloc] init];
+            SKSpriteNode *sprite = [[SKSpriteNode alloc] init];
+            NSData * data = [NSData dataWithBytes:framebuffer length:256*256*4];
+            SKTexture *tex = [SKTexture textureWithData:data size:CGSizeMake(256, 256)];
+            tex.filteringMode = SKTextureFilteringNearest;
+            sprite.texture = tex;
+            sprite.size = tex.size;
+            sprite.alpha = 1;
+            sprite.anchorPoint = CGPointMake((centerX/256), (centerY/256));
+            
+            sprite.userData = [NSMutableDictionary dictionary];
+            if(attitude){
+                [sprite.userData setObject:attitude forKey:@"attitude"];
+            }
+            [sprite.userData setValue:@(energy) forKey:@"energy"];
+            
+            
+            // sprite scale must be in sync with fpFrame size
+            float geoFactor = (768.0/256.0) * (1-self.lensPositionSlider.value);
+            sprite.scale = (geoFactor);
+            
+            //                [sprite setScale:10.0f];
+            //                [sprite setPosition:CGPointMake((focusPointer.size.width/2),(focusPointer.size.height/2))];
+            [sprite setPosition:CGPointMake((centerX-128) * geoFactor,
+                                            (centerY-128) * geoFactor)];
+            
+            //display cluster only if scene speed is forward
+            if(scene.speed >= 1){
+                
+                // set energy dependant scale and time factors
+                float scaleFactor = energy/40;
+                if (scaleFactor > 8.0)
+                    scaleFactor = 8.0;
+                else if (scaleFactor < 1.0)
+                    scaleFactor = 1.0;
+                
+                float timeScale = 2.0f*energy/2000;
+                
+                if(timeScale > 3.5)
+                    timeScale= 3.5f;
+                else if (timeScale < 2.0)
+                    timeScale = 2.0;
+                
+                [sprite.userData setValue:@(timeScale) forKey:@"duration"];
+                
+                
+                float alpaFactor = 0.2*energy/1000;
+                if (alpaFactor > 1)
+                    alpaFactor = 1;
+                else if (clusterSize < 5)
+                    alpaFactor = 0.9; //preserve visibility of small clusters
+                else if (alpaFactor < 0.3)
+                    alpaFactor = 0.3;
+                
+                SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
+                zoom.timingMode = SKActionTimingEaseOut;
+                SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale];
+                SKAction *remove = [SKAction removeFromParent];
+                //                    SKAction * remove = [SKAction  runBlock:^{
+                //                        [sprite removeAllChildren];
+                //                        [sprite removeFromParent];
+                //                    }];
+                SKAction * zoomFade = [SKAction group:@[zoom, fade]];
+                
+                //simple cluster identfification
+                if (clusterSize > 3) {
+                    if (width > 3 && heigth > 3 && energy > 1500){
+                        sprite.name=@"alpha";
+                    } else {
+                        if(width/heigth <= 0.75 || width/heigth >= 1.5 ){
+                            sprite.name=@"beta";
+                        } else if (energy > 1500 ){
+                            sprite.name=@"alpha";
+                        } else {
+                            sprite.name=@"beta";
+                        }
+                    }
+                } else if (clusterSize <= 3){
+                    sprite.name=@"gamma";
+                } else {
+                    NSLog(@"unclassified cluster");
+                }
+                
+                if (([scene getLabelCount]/4) < 3){
+                    [scene addLabelForNode:sprite];
+                }
+                
+                [scene.clusters addChild:sprite];
+                [sprite runAction: [SKAction sequence:@[zoomFade,remove]]];
+            }
+#endif
+//        });
+    }
+}
+
+- (void)handleDemoTimer:(NSTimer *) timer {
+    
+    [demoTimer invalidate];
+    demoTimer = nil;
+
+    skView.showsFPS = YES;
+    skView.showsNodeCount = YES;
+//    NSLog(@"demo timer fired");
+    
+    //load previously saved clusters
+    NSURL * prefix = [AAPLCameraViewController applicationDataDirectory];
+//    prefix = [prefix URLByAppendingPathComponent:@"demo_clusters"];
+    
+    unsigned int clusters = arc4random_uniform(2); //randomly display 0 to 4 clusters in one frame
+    unsigned int count = (unsigned int)[[[NSUserDefaults standardUserDefaults] valueForKey:@"demo_cluster_count"] integerValue];
+    
+    while(clusters--){
+        unsigned int rand = arc4random_uniform(count)+1;
+        NSString *path = [[prefix URLByAppendingPathComponent:[NSString stringWithFormat:@"%i", rand]] path];
+        NSLog(@"randomly selected cluster for display %i", rand);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSDictionary * data = [NSKeyedUnarchiver unarchiveObjectWithFile:path];
+            //    NSLog(@"%@",data);
+            [self parseClusters:data];
+        });
+    }
+        
+    //reset timer
+    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                                 target:self
+                                               selector:@selector(handleDemoTimer:)
+                                               userInfo:nil
+                                                repeats:NO];
+}
+
++ (NSURL*)applicationDataDirectory {
+//    NSFileManager* sharedFM = [NSFileManager defaultManager];
+//    NSArray* possibleURLs = [sharedFM URLsForDirectory:NSApplicationSupportDirectory
+//                                             inDomains:NSUserDomainMask];
+//    NSURL* appSupportDir = nil;
+//    NSURL* appDirectory = nil;
+//    
+//    if ([possibleURLs count] >= 1) {
+//        // Use the first directory (if multiple are returned)
+//        appSupportDir = [possibleURLs objectAtIndex:0];
+//    }
+//    
+//    // If a valid app support directory exists, add the
+//    // app's bundle ID to it to specify the final directory.
+//    if (appSupportDir) {
+//        NSString* appBundleID = [[NSBundle mainBundle] bundleIdentifier];
+//        appDirectory = [appSupportDir URLByAppendingPathComponent:appBundleID];
+//    }
+//    
+//    return appDirectory;
+    
+    return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+}
+
 
 @end
