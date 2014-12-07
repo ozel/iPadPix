@@ -273,11 +273,11 @@ CGPoint defaultFocusPOI;
         exit(1);
     }
     NSLog(@"Udp server started on port %hu", [asyncSocket localPort]);
-    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
-                                     target:self
-                                   selector:@selector(handleDemoTimer:)
-                                   userInfo:nil
-                                    repeats:NO];
+//    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+//                                     target:self
+//                                   selector:@selector(handleDemoTimer:)
+//                                   userInfo:nil
+//                                    repeats:NO];
 
     //set this to start overriding clusters from nr. 0
 //    [[NSUserDefaults standardUserDefaults] setValue:@(0) forKey:@"demo_cluster_count"];
@@ -440,12 +440,21 @@ CGPoint defaultFocusPOI;
     singleTap.numberOfTapsRequired = 1;
     [skView addGestureRecognizer:singleTap];
     
+    UITapGestureRecognizer *twoTap = [[UITapGestureRecognizer alloc] initWithTarget:   self action:@selector(respondToTwoTap:)];
+    twoTap.numberOfTapsRequired = 1;
+    twoTap.numberOfTouchesRequired = 2;
+    [skView addGestureRecognizer:twoTap];
+    
     UITapGestureRecognizer *fiveTap = [[UITapGestureRecognizer alloc] initWithTarget:   self action:@selector(respondToFiveTap:)];
     fiveTap.numberOfTapsRequired = 1;
     fiveTap.numberOfTouchesRequired = 4;
     [skView addGestureRecognizer:fiveTap];
     
+    [singleTap requireGestureRecognizerToFail:twoTap];
     [singleTap requireGestureRecognizerToFail:fiveTap];
+    
+    [twoTap requireGestureRecognizerToFail:fiveTap];
+
     
 }
 
@@ -458,6 +467,32 @@ CGPoint defaultFocusPOI;
             scene.speed=1;
      }
     
+}
+
+- (void)respondToTwoTap:(UIPanGestureRecognizer *)recognizer {
+    if (recognizer.state == UIGestureRecognizerStateEnded){
+        //toggle between demo on and off
+        if (demo_mode){
+            [demoTimer invalidate];
+            demoTimer = nil;
+            demo_mode = false;
+            
+            skView.showsFPS = NO;
+            skView.showsNodeCount = NO;
+        }
+        else {
+            demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                                         target:self
+                                                       selector:@selector(handleDemoTimer:)
+                                                       userInfo:nil
+                                                        repeats:NO];
+            demo_mode = true;
+            
+            skView.showsFPS = YES;
+            skView.showsNodeCount = YES;
+
+        }
+    }
 }
 
 - (void)respondToFiveTap:(UIPanGestureRecognizer *)recognizer {
@@ -1059,11 +1094,11 @@ withFilterContext:(id)filterContext
         dispatch_async(dispatch_get_main_queue(), ^{
         [self parseClusters:fromAvro];
             //reset timer
-            demoTimer = [NSTimer scheduledTimerWithTimeInterval:3
-                                                     target:self
-                                                   selector:@selector(handleDemoTimer:)
-                                                   userInfo:nil
-                                                    repeats:NO];
+//            demoTimer = [NSTimer scheduledTimerWithTimeInterval:5
+//                                                     target:self
+//                                                   selector:@selector(handleDemoTimer:)
+//                                                   userInfo:nil
+//                                                    repeats:NO];
         });
     } else {
         NSLog (@"got raw frame");
@@ -1333,8 +1368,6 @@ withFilterContext:(id)filterContext
     [demoTimer invalidate];
     demoTimer = nil;
 
-    skView.showsFPS = YES;
-    skView.showsNodeCount = YES;
 //    NSLog(@"demo timer fired");
     
     //load previously saved clusters
@@ -1354,13 +1387,15 @@ withFilterContext:(id)filterContext
             [self parseClusters:data];
         });
     }
-        
+    
+    if(demo_mode){
     //reset timer
-    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+    demoTimer = [NSTimer scheduledTimerWithTimeInterval:1
                                                  target:self
                                                selector:@selector(handleDemoTimer:)
                                                userInfo:nil
                                                 repeats:NO];
+    }
 }
 
 + (NSURL*)applicationDataDirectory {

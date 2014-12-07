@@ -9,9 +9,6 @@
 #import <Foundation/Foundation.h>
 
 #import "CameraFocusSquare.h"
-#import "AAPLCameraViewController.h"
-
-#import <QuartzCore/QuartzCore.h>
 
 const float squareLength = 80.0f;
 @implementation CameraFocusSquare

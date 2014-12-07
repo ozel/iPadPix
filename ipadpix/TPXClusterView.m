@@ -64,7 +64,7 @@ SKNode *labels;
         [node.userData setObject:energyLabel forKey:@"energyLabel"];
 
         float energy = [[node.userData valueForKey:@"energy"] floatValue];
-        energyLabel.text = [NSString stringWithFormat:@"%.1f eV", energy];
+        energyLabel.text = [NSString stringWithFormat:@"%.1f keV", energy];
         energyLabel.fontSize = 20;
         energyLabel.position = node.position; //just as intial position
         energyLabel.userData = [NSMutableDictionary new];

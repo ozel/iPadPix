@@ -350,7 +350,7 @@ int localFrameHeight;
     [CATransaction commit];
     NSLog(@"anchor point %f %f", centerX/256,centerY/256 );
     for (int i = 0; i < length; i++) {
-        [fBuffer setPixelWithX:xi[i] y:yi[i] counts:(unsigned char)floor(ei[i] * (MAX_COLORS)/(maxTOT+7)) ]; //scale tot to max color
+        [fBuffer setPixelWithX:xi[i] y:yi[i] counts:(unsigned char)floor(ei[i] * (MAX_COLORS)/(maxTOT+5)) ]; //scale tot to max color
     }
     fBuffer.isFree = false;
     
