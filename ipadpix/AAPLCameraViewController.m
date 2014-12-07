@@ -73,6 +73,12 @@ NSTimer *demoTimer = nil;
 dispatch_queue_t networkQueue;
 CGPoint defaultFocusPOI;
 
+//cps display
+SKLabelNode *alpha_ctr, *beta_ctr, *gamma_ctr, *unknown_ctr;
+NSUInteger alpha_cnt, beta_cnt,gamma_cnt, unknown_cnt;
+float alpha_cps, beta_cps, gamma_cps, unknown_cps;
+
+
 @synthesize focusPointer;
 @synthesize fBuffer;
 @synthesize overlayImageView;
@@ -416,6 +422,62 @@ CGPoint defaultFocusPOI;
     scene.clusters = clusterField;
     [scene addChild:scene.clusters];
     [scene addLabelContainer];
+    
+    //alpha, beta, gamma counters
+    SKLabelNode * cps_label = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+    cps_label.verticalAlignmentMode = SKLabelVerticalAlignmentModeBaseline;
+    cps_label.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+    cps_label.text = [NSString stringWithFormat:@"cps: "];
+    cps_label.fontColor = [UIColor yellowColor];
+    cps_label.fontSize = 23;
+    cps_label.zPosition = 1;
+    cps_label.position = CGPointMake(-250, (-[[UIScreen mainScreen] bounds].size.height/2)+6);
+    [scene addChild:cps_label];
+    
+    
+    alpha_ctr = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+    alpha_ctr.verticalAlignmentMode = SKLabelVerticalAlignmentModeBaseline;
+    alpha_ctr.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+    alpha_ctr.text = [NSString stringWithFormat:@"\u03B1 %.1f", alpha_cps]; //@"\u03B1 0 cps";
+    alpha_ctr.fontColor = [UIColor yellowColor];
+    alpha_ctr.fontSize = 23;
+    alpha_ctr.zPosition = 1;
+    alpha_ctr.position = CGPointMake(80, 0);
+    [cps_label addChild:alpha_ctr];
+    beta_ctr = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+    beta_ctr.verticalAlignmentMode = SKLabelVerticalAlignmentModeBaseline;
+    beta_ctr.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+    beta_ctr.text = [NSString stringWithFormat:@"\u03B2 %.1f", beta_cps];
+    beta_ctr.fontColor = [UIColor yellowColor];
+    beta_ctr.fontSize = 23;
+    beta_ctr.zPosition = 1;
+    beta_ctr.position = CGPointMake(180, 0);
+    [cps_label addChild:beta_ctr];
+    gamma_ctr = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+    gamma_ctr.verticalAlignmentMode = SKLabelVerticalAlignmentModeBaseline;
+    gamma_ctr.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+    gamma_ctr.text = [NSString stringWithFormat:@"\u03B3 %.1f", gamma_cps];
+    gamma_ctr.fontColor = [UIColor yellowColor];
+    gamma_ctr.fontSize = 23;
+    gamma_ctr.zPosition = 1;
+    gamma_ctr.position = CGPointMake(280, 0);
+    [cps_label addChild:gamma_ctr];
+    unknown_ctr = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+    unknown_ctr.verticalAlignmentMode = SKLabelVerticalAlignmentModeBaseline;
+    unknown_ctr.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
+    unknown_ctr.text = [NSString stringWithFormat:@"? %.1f", unknown_cps];
+    unknown_ctr.fontColor = [UIColor yellowColor];
+    unknown_ctr.fontSize = 23;
+    unknown_ctr.zPosition = 1;
+    unknown_ctr.position = CGPointMake(380, 0);
+    [cps_label addChild:unknown_ctr];
+
+    NSTimer *cpsTimer = [NSTimer scheduledTimerWithTimeInterval:1
+                                                 target:self
+                                               selector:@selector(handleCpsTimer:)
+                                               userInfo:nil
+                                                        repeats:YES];
+    
     
 //    SKNode *camera = [SKNode node];
 //    camera.name = @"camera";
@@ -1336,18 +1398,24 @@ withFilterContext:(id)filterContext
                 if (clusterSize > 3) {
                     if (width > 3 && heigth > 3 && energy > 1500){
                         sprite.name=@"alpha";
+                        alpha_cnt++;
                     } else {
                         if(width/heigth <= 0.75 || width/heigth >= 1.5 ){
                             sprite.name=@"beta";
+                            beta_cnt++;
                         } else if (energy > 1500 ){
                             sprite.name=@"alpha";
+                            alpha_cnt++;
                         } else {
                             sprite.name=@"beta";
+                            beta_cnt++;
                         }
                     }
-                } else if (clusterSize <= 3){
+                } else if (clusterSize <= 2){
                     sprite.name=@"gamma";
+                    gamma_cnt++;
                 } else {
+                    unknown_cnt++;
                     NSLog(@"unclassified cluster");
                 }
                 
@@ -1390,12 +1458,50 @@ withFilterContext:(id)filterContext
     
     if(demo_mode){
     //reset timer
-    demoTimer = [NSTimer scheduledTimerWithTimeInterval:1
+    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
                                                  target:self
                                                selector:@selector(handleDemoTimer:)
                                                userInfo:nil
                                                 repeats:NO];
     }
+}
+
+- (void)handleCpsTimer:(NSTimer *) timer {
+    static int count;
+    
+    alpha_cps+=alpha_cnt;
+    alpha_cnt=0; //simulate low pass behaviour on this counter
+
+    beta_cps+=beta_cnt;
+    beta_cnt=0; //simulate low pass behaviour on this counter
+
+    
+    gamma_cps+=gamma_cnt;
+    gamma_cnt=0; //simulate low pass behaviour on this counter
+    
+    unknown_cps+=unknown_cnt;
+    unknown_cnt=0; //simulate low pass behaviour on this counter
+    
+    
+    //update display every second
+    if(!(count%1)){
+        alpha_ctr.text = [NSString stringWithFormat:@"\u03B1 %.1f", alpha_cps];
+        beta_ctr.text = [NSString stringWithFormat:@"\u03B2 %.1f", beta_cps];
+        gamma_ctr.text = [NSString stringWithFormat:@"\u03B3 %.1f", gamma_cps];
+        unknown_ctr.text = [NSString stringWithFormat:@"? %.1f", unknown_cps];
+    }
+    
+    //average every 3 seconds
+    if(!(count%3)){
+        alpha_cps /= 3;
+        beta_cps /= 3;
+        gamma_cps /= 3;
+        unknown_cps /= 3;
+    }
+    count++;
+
+    
+//    NSLog(@"cps timer finished");
 }
 
 + (NSURL*)applicationDataDirectory {
