@@ -56,7 +56,7 @@ SKNode *labels;
 - (void)addLabelForNode:(SKNode*)node
 {
     //without dispatching this, the removing of labels terminates the app from time to time
-//    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
 
         SKLabelNode *energyLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
         energyLabel.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeCenter;
@@ -164,7 +164,7 @@ SKNode *labels;
         //label will be removed in SKview update loop
         
 
-//    });
+    });
 }
 
 - (void)removeLabelForNode:(SKNode*)node

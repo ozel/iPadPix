@@ -39,7 +39,7 @@
 #define MAXLIGHTNESS_VAL   0.1
 #define MINLIGHTNESS_VAL   1
 #define MAXHUE_VAL         0      //(0/360)
-#define MINHUE_VAL         0.167  //(60/360)
+#define MINHUE_VAL         0.16667  //(60/360)
 
 
 #define MAX_COLORS 256

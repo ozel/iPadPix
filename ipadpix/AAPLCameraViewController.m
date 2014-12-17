@@ -229,22 +229,29 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
         }
         
   		
-        dispatch_async(dispatch_get_main_queue(), ^{
+//        dispatch_async(dispatch_get_main_queue(), ^{
 			[self configureManualHUD];
 
             // translate, then scale, then rotate
-//            CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(self.previewView.layer.bounds.size.width/4.0), 0.0);
+            //CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(self.previewView.layer.bounds.size.width/4.0), 0.0);
+            //-680 shows righte edge in middle of screen = 8cm
+            //-300 = 2 cm shift
+        
+//            CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(0, 0.0);
+
+            CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(300), 0.0);
+        
 //            affineTransform = CGAffineTransformScale(affineTransform, 1.0, 1.0);
 //            affineTransform = CGAffineTransformRotate(affineTransform, 0.0);
 //            [CATransaction begin];
 //            [CATransaction setAnimationDuration:.025];
-//            [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setAffineTransform:affineTransform];
+            [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setAffineTransform:affineTransform];
 //            [CATransaction commit];
-            
+        
             //            [[overlayImageView layer] setOpacity:1.0];
             //            [fBuffer setOpacity:1.0];
 
-		});
+//		});
 
 	});
 	
@@ -764,7 +771,7 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
 - (void)positionManualHUD
 {
 	// Since we only show one manual view at a time, put them all in the same place (at the top)
-	//self.manualHUDExposureView.frame = CGRectMake(self.manualHUDFocusView.frame.origin.x, self.manualHUDFocusView.frame.origin.y, self.manualHUDExposureView.frame.size.width, self.manualHUDExposureView.frame.size.height);
+//	self.manualHUDExposureView.frame = CGRectMake(self.manualHUDFocusView.frame.origin.x, self.manualHUDFocusView.frame.origin.y, self.manualHUDExposureView.frame.size.width, self.manualHUDExposureView.frame.size.height);
 }
 
 - (void)setSlider:(UISlider*)slider highlightColor:(UIColor*)color
@@ -928,7 +935,12 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
 
 - (void)subjectAreaDidChange:(NSNotification *)notification
 {
-	CGPoint focusPOI = CGPointMake(.5, .5);
+	//CGPoint focusPOI = CGPointMake(.5, .5);
+    
+    float focus_shift = .8*(1-(self.lensPositionSlider.value*1.275));
+    if (focus_shift > 1.0) focus_shift = 1.0;
+    
+    CGPoint focusPOI = CGPointMake(focus_shift, .5);
     
 	[self focusWithMode:AVCaptureFocusModeContinuousAutoFocus exposeWithMode:AVCaptureExposureModeContinuousAutoExposure atDevicePoint:focusPOI monitorSubjectAreaChange:YES];
     
@@ -1081,6 +1093,16 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
 //                [group setValue:fBuffer forKey:@"parentLayer"];
        
                 [fBuffer addAnimation:group forKey:@"groupFadeZoom"];
+                
+                CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(300*(1+(lensPosition*1.275		))), 0.0);
+                
+                //            affineTransform = CGAffineTransformScale(affineTransform, 1.0, 1.0);
+                //            affineTransform = CGAffineTransformRotate(affineTransform, 0.0);
+                            [CATransaction begin];
+                            [CATransaction setAnimationDuration:1];
+                                [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setAffineTransform:affineTransform];
+                            [CATransaction commit];
+
                 
                 
                 
@@ -1325,7 +1347,7 @@ withFilterContext:(id)filterContext
             
             uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
             for (int i = 0; i < clusterSize; i++) {
-                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+6))];
+                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+28))];
                 
             }
             
@@ -1394,33 +1416,57 @@ withFilterContext:(id)filterContext
                 //                    }];
                 SKAction * zoomFade = [SKAction group:@[zoom, fade]];
                 
+                unsigned char max_length = 0;
+                float ratio = .0;
+                
+                if(width > heigth){
+                    max_length = width;
+                    ratio = width/heigth;
+                } else {
+                    max_length = heigth;
+                    ratio = heigth/width;
+                }
+                
+            
                 //simple cluster identfification
-                if (clusterSize > 3) {
-                    if (width > 3 && heigth > 3 && energy > 1500){
-                        sprite.name=@"alpha";
-                        alpha_cnt++;
-                    } else {
-                        if(width/heigth <= 0.75 || width/heigth >= 1.5 ){
-                            sprite.name=@"beta";
-                            beta_cnt++;
-                        } else if (energy > 1500 ){
-                            sprite.name=@"alpha";
-                            alpha_cnt++;
+                if (clusterSize > 4) {
+                    if ( ratio < 1.5 ) {
+                        if (clusterSize > (2*max_length) ){
+                            //round blob
+                            if (energy > 1000) {
+                                sprite.name=@"alpha";
+                                alpha_cnt++;
+                            } else {
+                                unknown_cnt++;
+                                NSLog(@"unclassified cluster");
+                            }
                         } else {
+                            //curly or circular track
+                            //high energy beta
                             sprite.name=@"beta";
                             beta_cnt++;
                         }
+                    } else {
+                        //low energy beta
+                        sprite.name=@"beta";
+                        beta_cnt++;
                     }
-                } else if (clusterSize <= 2){
+                } else if (clusterSize == 4 && ratio != 1){
+                    //short beta
+                    sprite.name=@"beta";
+                    gamma_cnt++;
+                } else if (clusterSize <= 3){
                     sprite.name=@"gamma";
                     gamma_cnt++;
-                } else {
+                }else {
                     unknown_cnt++;
                     NSLog(@"unclassified cluster");
                 }
                 
-                if (([scene getLabelCount]/4) < 3){
+                if (([scene getLabelCount]/4) < 10){
                     [scene addLabelForNode:sprite];
+                } else {
+                    NSLog(@"label count: %lu",[scene getLabelCount]);
                 }
                 
                 [scene.clusters addChild:sprite];
@@ -1458,7 +1504,7 @@ withFilterContext:(id)filterContext
     
     if(demo_mode){
     //reset timer
-    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
+    demoTimer = [NSTimer scheduledTimerWithTimeInterval:0.6
                                                  target:self
                                                selector:@selector(handleDemoTimer:)
                                                userInfo:nil

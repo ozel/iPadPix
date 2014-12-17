@@ -268,7 +268,7 @@
 				ORGANIZATIONNAME = "Apple Inc";
 				TargetAttributes = {
 					2F360BA117692C4700D9A404 = {
-						DevelopmentTeam = VMT9MK7PN8;
+						DevelopmentTeam = V5WJKFTQN5;
 						SystemCapabilities = {
 							com.apple.InterAppAudio = {
 								enabled = 0;
