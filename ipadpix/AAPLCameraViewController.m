@@ -183,6 +183,8 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
                 [self setVideoDeviceInput:videoDeviceInput];
                 [self setVideoDevice:videoDeviceInput.device];
                 
+                [session setSessionPreset:AVCaptureSessionPresetPhoto];
+
                 dispatch_async(dispatch_get_main_queue(), ^{
                     // Why are we dispatching this to the main queue?
                     // Because AVCaptureVideoPreviewLayer is the backing layer for our preview view and UIView can only be manipulated on main thread.
@@ -216,10 +218,12 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
             if ([self.videoDevice respondsToSelector:@selector(setVideoZoomFactor:)]) {
                 //float zoomFactor = self.videoDevice.activeFormat.videoZoomFactorUpscaleThreshold;
                 //[self.videoDevice setVideoZoomFactor:zoomFactor];
-                [self.videoDevice setVideoZoomFactor:2.0];
+                //[self.videoDevice setVideoZoomFactor:2.0];
             }
-            [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setVideoGravity:AVLayerVideoGravityResizeAspectFill];
+//            [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setVideoGravity:AVLayerVideoGravityResizeAspectFill];
+            [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setVideoGravity:AVLayerVideoGravityResizeAspect];
             [self.videoDevice setExposureMode:AVCaptureExposureModeContinuousAutoExposure];
+            [self.videoDevice setWhiteBalanceMode:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance];
             
             [self.videoDevice unlockForConfiguration];
         }
@@ -239,7 +243,8 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
         
 //            CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(0, 0.0);
 
-            CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(300), 0.0);
+        CGAffineTransform affineZoom = CGAffineTransformMakeScale(2.5,2.5);
+        CGAffineTransform affineTransform = CGAffineTransformTranslate(affineZoom,-256, 0.0);
         
 //            affineTransform = CGAffineTransformScale(affineTransform, 1.0, 1.0);
 //            affineTransform = CGAffineTransformRotate(affineTransform, 0.0);
@@ -820,7 +825,7 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
                 if ([device respondsToSelector:@selector(isAutoFocusRangeRestrictionSupported)] && device.autoFocusRangeRestrictionSupported) {
                     // If we are on an iOS version that supports AutoFocusRangeRestriction and the device supports it
                     // Set the focus range to "near"
-                    device.autoFocusRangeRestriction = AVCaptureAutoFocusRangeRestrictionNear;
+                    [device setAutoFocusRangeRestriction:AVCaptureAutoFocusRangeRestrictionNear];
                 }
                 [device setSubjectAreaChangeMonitoringEnabled:monitorSubjectAreaChange];
                 [device unlockForConfiguration];
@@ -937,10 +942,13 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
 {
 	//CGPoint focusPOI = CGPointMake(.5, .5);
     
-    float focus_shift = .8*(1-(self.lensPositionSlider.value*1.275));
+//    float focus_shift = .8*(1-(self.lensPositionSlider.value*1.275));
+    //-(256+(102*(1-lensPosition)))
+    float focus_shift = (256+(102*(1-self.lensPositionSlider.value)))*0.5/512;
+    
     if (focus_shift > 1.0) focus_shift = 1.0;
     
-    CGPoint focusPOI = CGPointMake(focus_shift, .5);
+    CGPoint focusPOI = CGPointMake(0.9, .5);
     
 	[self focusWithMode:AVCaptureFocusModeContinuousAutoFocus exposeWithMode:AVCaptureExposureModeContinuousAutoExposure atDevicePoint:focusPOI monitorSubjectAreaChange:YES];
     
@@ -1032,13 +1040,16 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
     
 //    NSLog(@"timer count: %i", count);
     
+
     float lensPosition = self.lensPositionSlider.value;
+
     
     // adjust things only if camera finished focusing on objects
     // else set timer to come back here
     if (!self.videoDevice.isAdjustingFocus){
         // re-calibrate core motion
         //[MotionManagerSingleton calibrate];
+        NSLog(@"lensPosition: %f", lensPosition);
 
 //        NSLog(@"focusPOI: %@", NSStringFromCGPoint(focusPOI));
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -1094,12 +1105,19 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
        
                 [fBuffer addAnimation:group forKey:@"groupFadeZoom"];
                 
-                CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(300*(1+(lensPosition*1.275		))), 0.0);
+                //CGAffineTransform affineTransform = CGAffineTransformMakeTranslation(-(300*(1+(lensPosition*1.275		))), 0.0);
+
+                CGAffineTransform affineZoom = CGAffineTransformMakeScale(2.5,2.5);
+                CGAffineTransform affineTransform = CGAffineTransformTranslate(affineZoom,-(256+(102*(1-lensPosition))), 0.0);
+//                CGAffineTransform affineTransform = CGAffineTransformTranslate(affineZoom,-(358*(1+(lensPosition*1.275		))), 0.0);
+                
+                
                 
                 //            affineTransform = CGAffineTransformScale(affineTransform, 1.0, 1.0);
                 //            affineTransform = CGAffineTransformRotate(affineTransform, 0.0);
                             [CATransaction begin];
-                            [CATransaction setAnimationDuration:1];
+                            [CATransaction setAnimationDuration:0.5];
+//                                [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setAffineTransform:affineZoom];
                                 [(AVCaptureVideoPreviewLayer *)[[self previewView] layer] setAffineTransform:affineTransform];
                             [CATransaction commit];
 
@@ -1329,8 +1347,8 @@ withFilterContext:(id)filterContext
             }
             
             //cluster box size:
-            unsigned char width = maxX - minX;
-            unsigned char heigth = maxY - minY;
+            unsigned char width = (maxX - minX)+1;
+            unsigned char heigth = (maxY - minY)+1;
             
             
             //            for (int i=0; i < clusterSize; i++) {
@@ -1427,37 +1445,62 @@ withFilterContext:(id)filterContext
                     ratio = heigth/width;
                 }
                 
+                float occupancy = (clusterSize/(width*heigth*1.0));
+                
+                int beta_threshold = 200;
             
                 //simple cluster identfification
-                if (clusterSize > 4) {
-                    if ( ratio < 1.5 ) {
-                        if (clusterSize > (2*max_length) ){
-                            //round blob
+                // 1 and 2 pixel clusters
+                if (clusterSize <= 2){
+                    if (energy<10){
+                        //assmuming electrons would be stopped in the metal layer
+                        sprite.name=@"gamma";
+                        gamma_cnt++;
+                    } else {
+                        sprite.name=@"beta/gamma";
+                        unknown_cnt++;
+                    }
+                }else if (clusterSize > 4) {
+//                    if ( ratio < 1.5 ) {
+                        // squarish clusters
+                        //if (clusterSize > (2*max_length) ){
+                        if ( occupancy > 0.5 ){
+                            //round heavy blob
                             if (energy > 1000) {
                                 sprite.name=@"alpha";
                                 alpha_cnt++;
                             } else {
+                                //overlapping cluters?
+                                //sprite.name=[NSString stringWithFormat:@"%.1f", occupancy];;
                                 unknown_cnt++;
                                 NSLog(@"unclassified cluster");
                             }
                         } else {
-                            //curly or circular track
-                            //high energy beta
-                            sprite.name=@"beta";
-                            beta_cnt++;
+                            //curly track
+                            if (energy>beta_threshold){
+                                //assumption on increased probability
+                                sprite.name=@"beta";
+                                beta_cnt++;
+                            } else {
+                                sprite.name=@"beta/gamma";
+                                unknown_cnt++;
+                            }
                         }
-                    } else {
-                        //low energy beta
-                        sprite.name=@"beta";
-                        beta_cnt++;
-                    }
-                } else if (clusterSize == 4 && ratio != 1){
-                    //short beta
-                    sprite.name=@"beta";
-                    gamma_cnt++;
-                } else if (clusterSize <= 3){
-                    sprite.name=@"gamma";
-                    gamma_cnt++;
+//                    } else {
+//                        // longish clusters
+//                        if (energy>beta_threshold){
+//                            //assumption on increased probability
+//                            sprite.name=@"beta";
+//                            beta_cnt++;
+//                        } else {
+//                            sprite.name=@"beta/gamma";
+//                            unknown_cnt++;
+//                        }
+//                    }
+                } else if (clusterSize == 4 && (width==1 || heigth==1)){
+                    //most likely a short muon track
+                    sprite.name=@"muon";
+                    unknown_cnt++;
                 }else {
                     unknown_cnt++;
                     NSLog(@"unclassified cluster");

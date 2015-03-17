@@ -1,9 +1,18 @@
-# iPadPix: Display radioactive radiation data on the iPad
+# iPadPix: Visualisation of radioactivity in real-time on an iPad
 
-Based on AVCamManual: https://developer.apple.com/wwdc/resources/sample-code/
-Requires GCDAsyncSocket: https://github.com/robbiehanson/CocoaAsyncSocket/
+Augmented reality via overlays of silicon pixel detector hit clusters.
+Using live Timepix sensor data provided by MAFalda: https://github.com/ozel/mafalda
 
 ## Requirements
+
+Libs:
+
+GCDAsyncSocket: https://github.com/robbiehanson/CocoaAsyncSocket/
+ObjectiveAvro: http://cocoadocs.org/docsets/ObjectiveAvro
+
+Hardware:
+
+Timepix: https://medipix.web.cern.ch/medipix/pages/medipix2/timepix.php
 
 ### Build
 
@@ -13,4 +22,4 @@ iOS 8 SDK
 
 iOS 8 or later
 
-Copyright (C) 2014 Apple Inc. All rights reserved.
+App based on AVCamManual: https://developer.apple.com/wwdc/resources/sample-code/

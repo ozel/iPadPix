@@ -89,20 +89,27 @@ SKNode *labels;
         pointerline.constraints = lineConstraints;
     
         //cluster type
-        SKLabelNode *typeLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
+        SKLabelNode *typeLabel = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Italic"];
         typeLabel.verticalAlignmentMode = SKLabelVerticalAlignmentModeCenter;
         typeLabel.text = node.name;
         typeLabel.fontSize = 40;
         typeLabel.zPosition = 1;
         typeLabel.position = CGPointMake(0, -22);
 
-        if([node.name isEqualToString:@"alpha"])
+        if([node.name isEqualToString:@"alpha"]){
             typeLabel.fontColor=[SKColor redColor];
-        else if ([node.name isEqualToString:@"beta"])
+            typeLabel.text= @"\u03B1";
+        }else if ([node.name isEqualToString:@"beta"]){
             typeLabel.fontColor=[SKColor orangeColor];
-        else if ([node.name isEqualToString:@"gamma"])
+            typeLabel.text= @"\u03B2";
+        }else if ([node.name isEqualToString:@"gamma"]){
             typeLabel.fontColor=[SKColor yellowColor];
+            typeLabel.text= @"\u03B3";
+        }else if ([node.name isEqualToString:@"beta/gamma"]){
+            typeLabel.text= @"\u03B2/\u03B3";
+        }
 
+        
         [energyLabel addChild:typeLabel];
 
         float duration = [[node.userData valueForKey:@"duration"] floatValue];
