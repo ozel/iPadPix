@@ -35,12 +35,20 @@
 
 //MPX HOT:
 
-#define SATURATION_VAL     0.9
-#define MAXLIGHTNESS_VAL   0.1
-#define MINLIGHTNESS_VAL   1
-#define MAXHUE_VAL         0      //(0/360)
-#define MINHUE_VAL         0.16667  //(60/360)
+//#define SATURATION_VAL     0.9
+//#define MAXLIGHTNESS_VAL   0.1
+//#define MINLIGHTNESS_VAL   1
+//#define MAXHUE_VAL         0      //(0/360)
+//#define MINHUE_VAL         0.16667  //(60/360)
 
+#define SATURATION_VAL     1.0
+
+// dark red
+#define MAXHUE_VAL         (10.0/256.0)      //(0/360)
+#define MAXLIGHTNESS_VAL   (83.0/256.0)
+// light yellow
+#define MINHUE_VAL         (39.0/256.0)  //(60/360)
+#define MINLIGHTNESS_VAL   (233.0/256.0)
 
 #define MAX_COLORS 256
 
@@ -74,6 +82,7 @@ int localFrameHeight;
             lightness = Maxlightness-(i+1)*((Maxlightness-Minlightness)/MAX_COLORS);
             hue = MaxHue-(i+1)*((MaxHue-MinHue)/MAX_COLORS);
             HSL2RGB(hue, saturation, lightness, &red, &green, &blue);
+            
 //            UIColor *color = [UIColor colorWithHue: hue saturation: saturation
 //                                        brightness: lightness alpha: alpha];
 //            [color getRed: &red green: &green blue: &blue alpha: &alpha];

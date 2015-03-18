@@ -1365,7 +1365,8 @@ withFilterContext:(id)filterContext
             
             uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
             for (int i = 0; i < clusterSize; i++) {
-                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256)/(maxTOT+28))];
+                //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor((ei[i] * (256.0-45)/((maxTOT*1.0)+10))+45)];
+                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+12)*1.0))];
                 
             }
             
@@ -1421,8 +1422,8 @@ withFilterContext:(id)filterContext
                     alpaFactor = 1;
                 else if (clusterSize < 5)
                     alpaFactor = 0.9; //preserve visibility of small clusters
-                else if (alpaFactor < 0.3)
-                    alpaFactor = 0.3;
+                else if (alpaFactor < 0.4)
+                    alpaFactor = 0.4;
                 
                 SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
                 zoom.timingMode = SKActionTimingEaseOut;
@@ -1460,15 +1461,22 @@ withFilterContext:(id)filterContext
                         sprite.name=@"beta/gamma";
                         unknown_cnt++;
                     }
-                }else if (clusterSize > 4) {
+                } else if (clusterSize <= 4 && max_length <= 2) {
+                    sprite.name=@"beta/gamma";
+                    unknown_cnt++;
+                } else {
 //                    if ( ratio < 1.5 ) {
                         // squarish clusters
                         //if (clusterSize > (2*max_length) ){
                         if ( occupancy > 0.5 ){
-                            //round heavy blob
                             if (energy > 1000) {
+                                //round heavy blob
                                 sprite.name=@"alpha";
                                 alpha_cnt++;
+                            } else if ( width==1 || heigth==1 ){
+                                //most likely a straight muon track
+                                sprite.name=@"muon";
+                                unknown_cnt++;
                             } else {
                                 //overlapping cluters?
                                 //sprite.name=[NSString stringWithFormat:@"%.1f", occupancy];;
@@ -1497,14 +1505,11 @@ withFilterContext:(id)filterContext
 //                            unknown_cnt++;
 //                        }
 //                    }
-                } else if (clusterSize == 4 && (width==1 || heigth==1)){
-                    //most likely a short muon track
-                    sprite.name=@"muon";
-                    unknown_cnt++;
-                }else {
-                    unknown_cnt++;
-                    NSLog(@"unclassified cluster");
                 }
+//                        else {
+//                    unknown_cnt++;
+//                    NSLog(@"unclassified cluster");
+//                }
                 
                 if (([scene getLabelCount]/4) < 10){
                     [scene addLabelForNode:sprite];

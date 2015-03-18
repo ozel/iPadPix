@@ -106,6 +106,7 @@ SKNode *labels;
             typeLabel.fontColor=[SKColor yellowColor];
             typeLabel.text= @"\u03B3";
         }else if ([node.name isEqualToString:@"beta/gamma"]){
+            typeLabel.fontColor=[SKColor yellowColor];
             typeLabel.text= @"\u03B2/\u03B3";
         }
 
