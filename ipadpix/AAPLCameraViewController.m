@@ -944,11 +944,13 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
     
 //    float focus_shift = .8*(1-(self.lensPositionSlider.value*1.275));
     //-(256+(102*(1-lensPosition)))
-    float focus_shift = (256+(102*(1-self.lensPositionSlider.value)))*0.5/512;
+    //-(256+(102*(1-lensPosition))
+    float focus_shift = (1024-256+(102*(1-self.lensPositionSlider.value)))/1024;
     
     if (focus_shift > 1.0) focus_shift = 1.0;
     
-    CGPoint focusPOI = CGPointMake(0.9, .5);
+  
+    CGPoint focusPOI = CGPointMake(focus_shift, .5f);
     
 	[self focusWithMode:AVCaptureFocusModeContinuousAutoFocus exposeWithMode:AVCaptureExposureModeContinuousAutoExposure atDevicePoint:focusPOI monitorSubjectAreaChange:YES];
     
@@ -959,7 +961,7 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
 //        }];
 //    });
 
-    NSLog(@"subjectAreaDidChange");
+    NSLog(@"subjectAreaDidChange, new x:%f", self.videoDevice.focusPointOfInterest.x);
 }
 
 
@@ -1077,9 +1079,29 @@ float alpha_cps, beta_cps, gamma_cps, unknown_cps;
          
 //            fBuffer.transform = CATransform3DMakeScale(3*(1-lensPosition), 3*(1-lensPosition), 1);
 
+            float focus_shift = (1024-((5*(1-lensPosition))))/1024;
+            
+            if (focus_shift > 1.0) focus_shift = 1.0;
+            
+            CGPoint focusPOI = CGPointMake(focus_shift, .5f);
+            
+            
+            dispatch_async([self sessionQueue], ^{
+                if(!TARGET_IPHONE_SIMULATOR){
+                    AVCaptureDevice *device = [self videoDevice];
+                    NSError *error = nil;
+                    if ([device lockForConfiguration:&error])
+                    {
+                      [device setFocusPointOfInterest:focusPOI];
+                    }
+                    [device unlockForConfiguration];
+                }
+           	});
+                        
            
             dispatch_async(dispatch_get_main_queue(), ^{
 //                fBuffer.opacity=0;
+                NSLog(@" new x:%f", self.videoDevice.focusPointOfInterest.x);
                 CABasicAnimation* fadeAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
                 fadeAnimation.fromValue = @1.0;
                 fadeAnimation.toValue = @0.5;
@@ -1366,7 +1388,7 @@ withFilterContext:(id)filterContext
             uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
             for (int i = 0; i < clusterSize; i++) {
                 //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor((ei[i] * (256.0-45)/((maxTOT*1.0)+10))+45)];
-                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+12)*1.0))];
+                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+17)*1.0))];
                 
             }
             
@@ -1461,7 +1483,7 @@ withFilterContext:(id)filterContext
                         sprite.name=@"beta/gamma";
                         unknown_cnt++;
                     }
-                } else if (clusterSize <= 4 && max_length <= 2) {
+                } else if (clusterSize <= 4) {
                     sprite.name=@"beta/gamma";
                     unknown_cnt++;
                 } else {
