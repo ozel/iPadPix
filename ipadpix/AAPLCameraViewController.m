@@ -78,6 +78,7 @@ SKLabelNode *alpha_ctr, *beta_ctr, *gamma_ctr, *unknown_ctr;
 NSUInteger alpha_cnt, beta_cnt,gamma_cnt, unknown_cnt;
 float alpha_cps, beta_cps, gamma_cps, unknown_cps;
 
+bool raw_tot = true;
 
 @synthesize focusPointer;
 @synthesize fBuffer;
@@ -1304,9 +1305,16 @@ withFilterContext:(id)filterContext
         // therefore we have to extract the number of composed characters with this custom category function
         int xdata = (int) [[cluster valueForKey:@"xi"] getNumberOfCharacters];
         int ydata = (int) [[cluster valueForKey:@"yi"] getNumberOfCharacters];
-        int edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
+        NSMutableArray * energies = [cluster valueForKey:@"ei"];
+
+        if(raw_tot) {
+            int edata = (int)[energies count];
+        } else {
+            int edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
+        }
         int clusterSize = xdata;
-        if(xdata != ydata && xdata != edata && ydata != edata){
+        double e_calib[clusterSize];
+        if(xdata != ydata /* && xdata != edata && ydata != edata*/){
             NSLog(@"WARNING: non equal byte length ------------------------");
         }
         
@@ -1342,9 +1350,12 @@ withFilterContext:(id)filterContext
             
             unsigned char xi[clusterSize];
             unsigned char yi[clusterSize];
+        
+            //only used for dithered, downsampled 8-bit tot
             unsigned char ei[clusterSize];
+        
             
-            unsigned char maxTOT = 0;
+            int maxTOT = 0;
             unsigned char maxX = 0;
             unsigned char maxY = 0;
             unsigned char minX = 255;
@@ -1354,9 +1365,36 @@ withFilterContext:(id)filterContext
             for(int i = 0; i < clusterSize; i++){
                 xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
                 yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
-                ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
-                if(ei[i] > maxTOT){
-                    maxTOT = ei[i];
+                if(raw_tot){
+                    double totval = (double)[[energies objectAtIndex:i] intValue];
+                    double a = 1.54505;
+                    double b = 50.6605 - 1.54505*1.19535 - totval;
+                    double c = -141.279 - 1.19535*50.6605  + totval*1.19535;
+                    double sol;
+                    double sol1 = -b + sqrt(b*b - 4*a*c);
+                    sol1 /= 2*a;
+                    double sol2 = -b - sqrt(b*b - 4*a*c);
+                    sol2 /= 2*a;
+                    
+                    //cout << "______________________________________" << endl;
+                    //cout << "sol1 : " << sol1 << " | sol2 : " << sol2 << endl;
+                    
+                    if (sol1 > 0. && sol2 > 0.) { // If both solution are positive
+                        double maxsol = sol1;
+                        if(sol2 > maxsol) maxsol = sol2;
+                        sol = maxsol;
+                    } else if(sol2 <= 0 && sol1 > 0.) {
+                        sol = sol1; // Otherwise use the positive solution
+                    } else sol = sol2;
+                    e_calib[i]=sol;
+                    if([[energies objectAtIndex:i] intValue] > maxTOT){
+                        maxTOT = [[energies objectAtIndex:i] intValue];
+                    }
+                } else {
+                    ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
+                    if(ei[i] > maxTOT){
+                        maxTOT = ei[i];
+                    }
                 }
                 if(xi[i] > maxX)
                     maxX = xi[i];
@@ -1377,19 +1415,31 @@ withFilterContext:(id)filterContext
             //                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
             //
             //            }
-            
+//        NSDictionary * e;
+//        for (e in energies){
+//            NSLog (@"%i ",[e intValue]);
+//        }
+        NSLog (@"%@ ",energies);
+
+        NSLog (@"maxTOT %i",maxTOT);
+        
 #if 0
             TPXFrameBufferLayer * localFBuffer = [fbArray fillFbLayerWithLength:clusterSize Xi:xi Yi:yi Ei:ei MaxTOT:maxTOT CenterX:centerX CenterY:centerY Energy:energy];
             [localFBuffer blit];
             [localFBuffer animateWithLensPosition:self.lensPositionSlider.value];
             
 #else
-            
+        
+        
             uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
             for (int i = 0; i < clusterSize; i++) {
                 //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor((ei[i] * (256.0-45)/((maxTOT*1.0)+10))+45)];
-                framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+17)*1.0))];
-                
+                if(raw_tot){
+                    //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[[[energies objectAtIndex:i] intValue]*(11810)/(maxTOT+150)];
+                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(int)round(e_calib[i]*11810/(maxTOT))];
+                } else {
+                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+17)*1.0))];
+                }
             }
             
             //                    SKSpriteNode *sprite = [SKSpriteNode spriteNodeWithColor:[SKColor redColor] size:CGSizeMake(256, 256)];

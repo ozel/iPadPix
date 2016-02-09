@@ -50,7 +50,7 @@
 #define MINHUE_VAL         (39.0/256.0)  //(60/360)
 #define MINLIGHTNESS_VAL   (233.0/256.0)
 
-#define MAX_COLORS 256
+#define MAX_COLORS (11810)//256
 
 uint32_t palette[MAX_COLORS];
 uint32_t palette_rgba[MAX_COLORS];
@@ -93,7 +93,7 @@ int localFrameHeight;
 //            green*=alpha;
 //            blue*=alpha;
             
-            NSLog(@"red %f, green %f, blue %f", red, green, blue);
+//            NSLog(@"red %f, green %f, blue %f", red, green, blue);
 
             //ARGB
 //            palette[i] = ((int)floor(alpha*255.0)) << (3*8) |

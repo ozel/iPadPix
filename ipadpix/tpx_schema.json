@@ -14,7 +14,8 @@
                                     {"name": "center_y", "type": "float"},
                                     {"name": "xi", "type": "bytes"},
                                     {"name": "yi", "type": "bytes"},
-                                    {"name": "ei", "type": "bytes"}
+                                    {"name": "ei", "type": {
+                                    "type": "array", "items":"int"}}
               			]
 				}
        		}
