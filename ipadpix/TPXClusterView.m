@@ -226,8 +226,8 @@ long int distanceBetweenPoints(CGPoint first, CGPoint second) {
 //    [CATransaction setDisableActions: YES];
     
     // Scroll
-    if (self.clusters)
-        [self.clusters scrollWith:_speed*_dt Dt:_dt];
+//    if (self.clusters)
+//        [self.clusters scrollWith:_speed*_dt Dt:_dt];
     
     for (SKLabelNode *label in labels.children){
         if (label.alpha < 0.4){

@@ -1195,6 +1195,7 @@ withFilterContext:(id)filterContext
     // the json object returns the opriginal Avro bytes as UTF8 strings, this means numbers > 194 are stored in two bytes
     // and any zero bytes terminate the string early
     // TODO: enable of parsing xi and yi zero values, ei should be never zero
+    NSLog(@"packet size: %lu", data.length);
     NSDictionary *fromAvro = [avro JSONObjectFromData:data forSchemaNamed:@"tpxFrame" error:&error] ;
     if (!error) {
         [demoTimer invalidate];
@@ -1283,7 +1284,7 @@ withFilterContext:(id)filterContext
 
 
 -(void)parseClusters:(NSDictionary *)fromAvro {
-    //    NSLog (@"%@",fromAvro);
+    //NSLog (@"%@",fromAvro.);
     //        NSLog (@"data.length %lu data: %@",(unsigned long)data.length, data);
     
     //save current device orientation as reference
@@ -1296,6 +1297,7 @@ withFilterContext:(id)filterContext
     NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];
     int counts = (int)[clusters count];
     NSLog (@"got %i avro clusters", counts);
+    NSLog (@"%@",clusters);
     
     NSDictionary * cluster;
     
@@ -1303,20 +1305,24 @@ withFilterContext:(id)filterContext
     for (cluster in clusters) {
         // UTF8 string length is in bytes and thus missleading if there are composed characters,
         // therefore we have to extract the number of composed characters with this custom category function
-        int xdata = (int) [[cluster valueForKey:@"xi"] getNumberOfCharacters];
-        int ydata = (int) [[cluster valueForKey:@"yi"] getNumberOfCharacters];
+        NSMutableArray * xi = [cluster valueForKey:@"xi"];
+        NSMutableArray * yi = [cluster valueForKey:@"yi"];
+//        int xdata = (int) [[cluster valueForKey:@"xi"] getNumberOfCharacters];
+//        int ydata = (int) [[cluster valueForKey:@"yi"] getNumberOfCharacters];
         NSMutableArray * energies = [cluster valueForKey:@"ei"];
 
+        int edata;
+        
         if(raw_tot) {
-            int edata = (int)[energies count];
+            edata = (int)[energies count];
         } else {
-            int edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
+            edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
         }
-        int clusterSize = xdata;
+        int clusterSize = (int)[energies count];
         double e_calib[clusterSize];
-        if(xdata != ydata /* && xdata != edata && ydata != edata*/){
-            NSLog(@"WARNING: non equal byte length ------------------------");
-        }
+//        if(edata != (int)[xi count] /* && xdata != edata && ydata != edata*/){
+//            NSLog(@"WARNING: non equal byte length ------------------------");
+//        }
         
         float centerX = [[cluster valueForKey:@"center_x"] floatValue];
         float centerY = [[cluster valueForKey:@"center_y"] floatValue];
@@ -1348,8 +1354,8 @@ withFilterContext:(id)filterContext
         
             uint32_t framebuffer[256*256]={0};
             
-            unsigned char xi[clusterSize];
-            unsigned char yi[clusterSize];
+//            unsigned char xi[clusterSize];
+//            unsigned char yi[clusterSize];
         
             //only used for dithered, downsampled 8-bit tot
             unsigned char ei[clusterSize];
@@ -1363,8 +1369,8 @@ withFilterContext:(id)filterContext
             
             // get _character_ values (UTF8 numbers can be multiple bytes)
             for(int i = 0; i < clusterSize; i++){
-                xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
-                yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
+//                xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
+//                yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
                 if(raw_tot){
                     double totval = (double)[[energies objectAtIndex:i] intValue];
                     double a = 1.54505;
@@ -1396,14 +1402,14 @@ withFilterContext:(id)filterContext
                         maxTOT = ei[i];
                     }
                 }
-                if(xi[i] > maxX)
-                    maxX = xi[i];
-                if(xi[i]< minX)
-                    minX = xi[i];
-                if(yi[i] > maxY)
-                    maxY = yi[i];
-                if(yi[i]< minY)
-                    minY = yi[i];
+                if([[xi objectAtIndex:i] intValue] > maxX)
+                    maxX = [[xi objectAtIndex:i] intValue];
+                if([[xi objectAtIndex:i] intValue]< minX)
+                    minX = [[xi objectAtIndex:i] intValue];
+                if([[yi objectAtIndex:i] intValue] > maxY)
+                    maxY = [[yi objectAtIndex:i] intValue];
+                if([[yi objectAtIndex:i] intValue] < minY)
+                    minY = [[yi objectAtIndex:i] intValue];
             }
             
             //cluster box size:
@@ -1433,12 +1439,23 @@ withFilterContext:(id)filterContext
         
             uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
             for (int i = 0; i < clusterSize; i++) {
+                char x = [[xi objectAtIndex:i] intValue];
+                char y = [[yi objectAtIndex:i] intValue];
                 //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor((ei[i] * (256.0-45)/((maxTOT*1.0)+10))+45)];
                 if(raw_tot){
                     //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[[[energies objectAtIndex:i] intValue]*(11810)/(maxTOT+150)];
-                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(int)round(e_calib[i]*11810/(maxTOT))];
+                    //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(int)round(e_calib[i]*11810/(maxTOT))];
+                    int tot_scaled_within_cluster = (int)round(e_calib[i]*11810/(maxTOT));
+                    if (tot_scaled_within_cluster > (11810-1)){
+                        tot_scaled_within_cluster = 11810-1;
+                        NSLog(@"--- scaled tot overflowing max value!");
+                    } else if (tot_scaled_within_cluster < 0){
+                        tot_scaled_within_cluster = 0;
+                        NSLog(@"--- scaled tot underflowing min value!");
+                    }
+                    framebuffer[(y * 256) + x] = palette_rgba[tot_scaled_within_cluster];
                 } else {
-                    framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+17)*1.0))];
+                    framebuffer[(y * 256) + x] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+17)*1.0))];
                 }
             }
             
@@ -1497,7 +1514,14 @@ withFilterContext:(id)filterContext
                 else if (alpaFactor < 0.4)
                     alpaFactor = 0.4;
                 
+
+                //for testing
+//                scaleFactor = 8;
+//                timeScale = 3;
+//                alpaFactor = 1.0;
+                
                 SKAction * zoom = [SKAction scaleBy:scaleFactor*(1+self.lensPositionSlider.value) duration:timeScale];
+                //SKAction * zoom = [SKAction scaleBy:scaleFactor*(1) duration:timeScale];
                 zoom.timingMode = SKActionTimingEaseOut;
                 SKAction * fade = [SKAction fadeAlphaTo:alpaFactor duration:timeScale];
                 SKAction *remove = [SKAction removeFromParent];

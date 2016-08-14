@@ -1,0 +1,19 @@
+{
+    "type": "record",
+    "name": "Person",
+    "namespace": "com.movile.objectiveavro.unittest.v1",
+    "fields": [
+        {
+            "name": "name",
+            "type": "string"
+        },
+        {
+            "name": "country",
+            "type": "string"
+        },
+        {
+            "name": "age",
+            "type": "int"
+        }
+    ]
+}

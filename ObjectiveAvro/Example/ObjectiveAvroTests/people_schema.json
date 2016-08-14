@@ -1,0 +1,35 @@
+{
+    "type": "record",
+    "name": "People",
+    "namespace": "com.movile.objectiveavro.unittest.v1",
+    "fields": [
+        {
+            "name": "people",
+            "type": {
+                "type": "array",
+                "items": {
+                    "type": "record",
+                    "name": "Person",
+                    "fields": [
+                        {
+                            "name": "name",
+                            "type": "string"
+                        },
+                        {
+                            "name": "country",
+                            "type": "string"
+                        },
+                        {
+                            "name": "age",
+                            "type": "int"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "generated_timestamp",
+            "type": "long"
+        }
+    ]
+}
