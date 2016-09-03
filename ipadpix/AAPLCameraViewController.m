@@ -50,7 +50,7 @@ static void *LensPositionContext = &LensPositionContext;
 
 @property (nonatomic, strong) NSArray *exposureModes;
 
-@property (nonatomic) dispatch_queue_t sessionQueue; // Communicate with the session and other session objects on this queue.
+@property (nonatomic, strong) dispatch_queue_t sessionQueue; // Communicate with the session and other session objects on this queue.
 @property (nonatomic) AVCaptureSession *session;
 @property (nonatomic) AVCaptureDeviceInput *videoDeviceInput;
 @property (nonatomic) AVCaptureDevice *videoDevice;
@@ -60,6 +60,7 @@ static void *LensPositionContext = &LensPositionContext;
 @property (nonatomic, readonly, getter = isSessionRunningAndDeviceAuthorized) BOOL sessionRunningAndDeviceAuthorized;
 @property (nonatomic) BOOL lockInterfaceRotation;
 @property (nonatomic) id runtimeErrorHandlingObserver;
+@property (nonatomic, strong) dispatch_queue_t networkQueue;
 
 @end
 
@@ -70,7 +71,6 @@ static UIColor* CONTROL_HIGHLIGHT_COLOR = nil;
 
 NSTimer *focusTimer = nil;
 NSTimer *demoTimer = nil;
-dispatch_queue_t networkQueue;
 CGPoint defaultFocusPOI;
 
 //cps display
@@ -266,17 +266,18 @@ bool raw_tot = true;
     // setup and bind UDP server socket to port
   
     // Create High Priotity queue
-    networkQueue = dispatch_queue_create("networkQueue", NULL);
+    __strong dispatch_queue_t networkQueue = dispatch_queue_create("networkQueue", NULL);
+    [self setNetworkQueue:networkQueue];
     dispatch_queue_t high = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
     
-    dispatch_set_target_queue(networkQueue, high);
+    dispatch_set_target_queue([self networkQueue], high);
     
     demo_mode = false;
     record_mode = false;
    
     // Create UDP Socket
-    asyncSocket = [[GCDAsyncUdpSocket alloc] initWithDelegate:self delegateQueue:networkQueue];
-//    asyncSocket = [[GCDAsyncUdpSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
+    asyncSocket = [[GCDAsyncUdpSocket alloc] initWithDelegate:self delegateQueue:[self networkQueue]];
+    //asyncSocket = [[GCDAsyncUdpSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
     [asyncSocket setPreferIPv4];
 
     NSError *error = nil;
@@ -348,7 +349,7 @@ bool raw_tot = true;
 //    fBuffer = [TPXFrameBufferLayer createLayerWithFrame:focusPointer Index:999];
 //    fBuffer.contentsScale = [[UIScreen mainScreen] scale]*2;
     
-    //new cluster frame buffer array
+    //new cluster frame buffer array, calculates palette
     fbArray = [NSMutableArray initTPXFrameBuffersWithParentLayer:overlayImageView.layer];
     
     
@@ -1218,7 +1219,7 @@ withFilterContext:(id)filterContext
             }
         }
         dispatch_async(dispatch_get_main_queue(), ^{
-        [self parseClusters:fromAvro];
+            [self parseClusters:fromAvro];
             //reset timer
 //            demoTimer = [NSTimer scheduledTimerWithTimeInterval:5
 //                                                     target:self
@@ -1297,7 +1298,7 @@ withFilterContext:(id)filterContext
     NSArray * clusters = [fromAvro valueForKey:@"clusterArray"];
     int counts = (int)[clusters count];
     NSLog (@"got %i avro clusters", counts);
-    NSLog (@"%@",clusters);
+    //NSLog (@"%@",clusters);
     
     NSDictionary * cluster;
     
@@ -1305,29 +1306,31 @@ withFilterContext:(id)filterContext
     for (cluster in clusters) {
         // UTF8 string length is in bytes and thus missleading if there are composed characters,
         // therefore we have to extract the number of composed characters with this custom category function
-        NSMutableArray * xi = [cluster valueForKey:@"xi"];
-        NSMutableArray * yi = [cluster valueForKey:@"yi"];
+        NSArray * xi = [cluster valueForKey:@"xi"];
+        NSArray * yi = [cluster valueForKey:@"yi"];
 //        int xdata = (int) [[cluster valueForKey:@"xi"] getNumberOfCharacters];
 //        int ydata = (int) [[cluster valueForKey:@"yi"] getNumberOfCharacters];
-        NSMutableArray * energies = [cluster valueForKey:@"ei"];
-
-        int edata;
+        NSArray * energies = [cluster valueForKey:@"ei"];
+    
+        //int edata;
         
-        if(raw_tot) {
-            edata = (int)[energies count];
-        } else {
-            edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
-        }
+//            if(raw_tot) {
+//                edata = (int)[energies count];
+//            } else {
+//                edata = (int) [[cluster valueForKey:@"ei"] getNumberOfCharacters];
+//            }
         int clusterSize = (int)[energies count];
-        double e_calib[clusterSize];
 //        if(edata != (int)[xi count] /* && xdata != edata && ydata != edata*/){
 //            NSLog(@"WARNING: non equal byte length ------------------------");
 //        }
-        
+        //__block double e_calib[10000];
+        __block NSMutableArray * e_calib = [[NSMutableArray alloc] init];
+        //__block NSMutableArray * framebuffer = [[NSMutableArray alloc] init];
+
         float centerX = [[cluster valueForKey:@"center_x"] floatValue];
         float centerY = [[cluster valueForKey:@"center_y"] floatValue];
         float energy = [[cluster valueForKey:@"energy"] floatValue];
-        NSLog (@"clusterTOT: %@ size: %i centerx: %.1f centery: %.1f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
+        //NSLog (@"clusterTOT: %@ size: %i centerx: %.1f centery: %.1f",[cluster valueForKey:@"energy"], clusterSize, centerX, centerY);
         //            NSLog(@"size xi: %i size yi: %i, size ei: %i ",xdata,ydata,edata);
         
         //            NSData * test = [cluster valueForKey:@"yi"];
@@ -1350,82 +1353,80 @@ withFilterContext:(id)filterContext
         //            NSLog(@"%@", test);
         
         //TODO: is dispatching here better for fast packet processing?
-//        dispatch_async(dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+
+        uint32_t framebuffer[256*256]={0};
+
+    
+        //only used for dithered, downsampled 8-bit tot
+        unsigned char ei[clusterSize];
+    
         
-            uint32_t framebuffer[256*256]={0};
-            
-//            unsigned char xi[clusterSize];
-//            unsigned char yi[clusterSize];
+        int maxTOT = 0;
+        unsigned char maxX = 0;
+        unsigned char maxY = 0;
+        unsigned char minX = 255;
+        unsigned char minY = 255;
         
-            //only used for dithered, downsampled 8-bit tot
-            unsigned char ei[clusterSize];
-        
-            
-            int maxTOT = 0;
-            unsigned char maxX = 0;
-            unsigned char maxY = 0;
-            unsigned char minX = 255;
-            unsigned char minY = 255;
-            
-            // get _character_ values (UTF8 numbers can be multiple bytes)
-            for(int i = 0; i < clusterSize; i++){
+        // get _character_ values (UTF8 numbers can be multiple bytes)
+        for(int i = 0; i < clusterSize; i++){
 //                xi[i] = (unsigned char)[[cluster valueForKey:@"xi"] characterAtIndex:i ];
 //                yi[i] = (unsigned char)[[cluster valueForKey:@"yi"] characterAtIndex:i ];
-                if(raw_tot){
-                    double totval = (double)[[energies objectAtIndex:i] intValue];
-                    double a = 1.54505;
-                    double b = 50.6605 - 1.54505*1.19535 - totval;
-                    double c = -141.279 - 1.19535*50.6605  + totval*1.19535;
-                    double sol;
-                    double sol1 = -b + sqrt(b*b - 4*a*c);
-                    sol1 /= 2*a;
-                    double sol2 = -b - sqrt(b*b - 4*a*c);
-                    sol2 /= 2*a;
-                    
-                    //cout << "______________________________________" << endl;
-                    //cout << "sol1 : " << sol1 << " | sol2 : " << sol2 << endl;
-                    
-                    if (sol1 > 0. && sol2 > 0.) { // If both solution are positive
-                        double maxsol = sol1;
-                        if(sol2 > maxsol) maxsol = sol2;
-                        sol = maxsol;
-                    } else if(sol2 <= 0 && sol1 > 0.) {
-                        sol = sol1; // Otherwise use the positive solution
-                    } else sol = sol2;
-                    e_calib[i]=sol;
-                    if([[energies objectAtIndex:i] intValue] > maxTOT){
-                        maxTOT = [[energies objectAtIndex:i] intValue];
-                    }
-                } else {
-                    ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
-                    if(ei[i] > maxTOT){
-                        maxTOT = ei[i];
-                    }
+            if(raw_tot){
+                double totval = (double)[[energies objectAtIndex:i] intValue];
+                double a = 1.54505;
+                double b = 50.6605 - 1.54505*1.19535 - totval;
+                double c = -141.279 - 1.19535*50.6605  + totval*1.19535;
+                double sol;
+                double sol1 = -b + sqrt(b*b - 4*a*c);
+                sol1 /= 2*a;
+                double sol2 = -b - sqrt(b*b - 4*a*c);
+                sol2 /= 2*a;
+                
+                //cout << "______________________________________" << endl;
+                //cout << "sol1 : " << sol1 << " | sol2 : " << sol2 << endl;
+                
+                if (sol1 > 0. && sol2 > 0.) { // If both solution are positive
+                    double maxsol = sol1;
+                    if(sol2 > maxsol) maxsol = sol2;
+                    sol = maxsol;
+                } else if(sol2 <= 0 && sol1 > 0.) {
+                    sol = sol1; // Otherwise use the positive solution
+                } else sol = sol2;
+                [e_calib addObject:[NSNumber numberWithFloat:sol]];
+                if([[energies objectAtIndex:i] intValue] > maxTOT){
+                    maxTOT = [[energies objectAtIndex:i] intValue];
                 }
-                if([[xi objectAtIndex:i] intValue] > maxX)
-                    maxX = [[xi objectAtIndex:i] intValue];
-                if([[xi objectAtIndex:i] intValue]< minX)
-                    minX = [[xi objectAtIndex:i] intValue];
-                if([[yi objectAtIndex:i] intValue] > maxY)
-                    maxY = [[yi objectAtIndex:i] intValue];
-                if([[yi objectAtIndex:i] intValue] < minY)
-                    minY = [[yi objectAtIndex:i] intValue];
+            } else {
+                ei[i] = (unsigned char)[[cluster valueForKey:@"ei"] characterAtIndex:i ];
+                if(ei[i] > maxTOT){
+                    maxTOT = ei[i];
+                }
             }
+            if([[xi objectAtIndex:i] intValue] > maxX)
+                maxX = [[xi objectAtIndex:i] intValue];
+            if([[xi objectAtIndex:i] intValue]< minX)
+                minX = [[xi objectAtIndex:i] intValue];
+            if([[yi objectAtIndex:i] intValue] > maxY)
+                maxY = [[yi objectAtIndex:i] intValue];
+            if([[yi objectAtIndex:i] intValue] < minY)
+                minY = [[yi objectAtIndex:i] intValue];
+        }
             
-            //cluster box size:
-            unsigned char width = (maxX - minX)+1;
-            unsigned char heigth = (maxY - minY)+1;
-            
-            
-            //            for (int i=0; i < clusterSize; i++) {
-            //                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
-            //
-            //            }
+        //cluster box size:
+        unsigned char width = (maxX - minX)+1;
+        unsigned char heigth = (maxY - minY)+1;
+        
+        
+        //            for (int i=0; i < clusterSize; i++) {
+        //                NSLog (@"%d %d %d",xi[i],yi[i],ei[i] );
+        //
+        //            }
 //        NSDictionary * e;
 //        for (e in energies){
 //            NSLog (@"%i ",[e intValue]);
 //        }
-        NSLog (@"%@ ",energies);
+        //NSLog (@"%@ ",energies);
 
         NSLog (@"maxTOT %i",maxTOT);
         
@@ -1439,26 +1440,27 @@ withFilterContext:(id)filterContext
         
             uint32_t * palette_rgba = [TPXFrameBufferLayer getPalette];
             for (int i = 0; i < clusterSize; i++) {
-                char x = [[xi objectAtIndex:i] intValue];
-                char y = [[yi objectAtIndex:i] intValue];
+                int x = [[xi objectAtIndex:i] intValue];
+                int y = [[yi objectAtIndex:i] intValue];
                 //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(unsigned char)floor((ei[i] * (256.0-45)/((maxTOT*1.0)+10))+45)];
                 if(raw_tot){
                     //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[[[energies objectAtIndex:i] intValue]*(11810)/(maxTOT+150)];
                     //framebuffer[(yi[i] * 256) + xi[i]] = palette_rgba[(int)round(e_calib[i]*11810/(maxTOT))];
-                    int tot_scaled_within_cluster = (int)round(e_calib[i]*11810/(maxTOT));
+                    int tot_scaled_within_cluster = (int)round([[e_calib objectAtIndex:i] floatValue]*11810/(maxTOT));
                     if (tot_scaled_within_cluster > (11810-1)){
                         tot_scaled_within_cluster = 11810-1;
                         NSLog(@"--- scaled tot overflowing max value!");
-                    } else if (tot_scaled_within_cluster < 0){
-                        tot_scaled_within_cluster = 0;
+                    } else if (tot_scaled_within_cluster <= 0){
+                        tot_scaled_within_cluster = 1;
                         NSLog(@"--- scaled tot underflowing min value!");
                     }
                     framebuffer[(y * 256) + x] = palette_rgba[tot_scaled_within_cluster];
+                    //[framebuffer insertObject:[NSNumber numberWithFloat:palette_rgba[tot_scaled_within_cluster]] atIndex:(y * 256) + x];
                 } else {
                     framebuffer[(y * 256) + x] = palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+17)*1.0))];
+                    //[framebuffer insertObject:[NSNumber numberWithFloat:palette_rgba[(unsigned char)floor(ei[i] * (256.0)/((maxTOT+17)*1.0))]] atIndex:(y * 256) + x];
                 }
             }
-            
             //                    SKSpriteNode *sprite = [SKSpriteNode spriteNodeWithColor:[SKColor redColor] size:CGSizeMake(256, 256)];
             //                SKSpriteNode *node = [[SKSpriteNode alloc] init];
             SKSpriteNode *sprite = [[SKSpriteNode alloc] init];
@@ -1617,7 +1619,7 @@ withFilterContext:(id)filterContext
                 [sprite runAction: [SKAction sequence:@[zoomFade,remove]]];
             }
 #endif
-//        });
+        });
     }
 }
 
