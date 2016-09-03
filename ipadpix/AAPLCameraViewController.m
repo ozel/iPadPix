@@ -441,7 +441,7 @@ bool raw_tot = true;
     SKLabelNode * cps_label = [SKLabelNode labelNodeWithFontNamed:@"Menlo-Regular"];
     cps_label.verticalAlignmentMode = SKLabelVerticalAlignmentModeBaseline;
     cps_label.horizontalAlignmentMode = SKLabelHorizontalAlignmentModeLeft;
-    cps_label.text = [NSString stringWithFormat:@"cps: "];
+    cps_label.text = [NSString stringWithFormat:@"cpm: "];
     cps_label.fontColor = [UIColor yellowColor];
     cps_label.fontSize = 23;
     cps_label.zPosition = 1;
@@ -1675,20 +1675,20 @@ withFilterContext:(id)filterContext
     unknown_cnt=0; //simulate low pass behaviour on this counter
     
     
-    //update display every second
-    if(!(count%1)){
+    //update display every 2 seconds
+    if(!(count%2)){
         alpha_ctr.text = [NSString stringWithFormat:@"\u03B1 %.1f", alpha_cps];
         beta_ctr.text = [NSString stringWithFormat:@"\u03B2 %.1f", beta_cps];
         gamma_ctr.text = [NSString stringWithFormat:@"\u03B3 %.1f", gamma_cps];
         unknown_ctr.text = [NSString stringWithFormat:@"? %.1f", unknown_cps];
     }
     
-    //average every 3 seconds
-    if(!(count%3)){
-        alpha_cps /= 3;
-        beta_cps /= 3;
-        gamma_cps /= 3;
-        unknown_cps /= 3;
+    //average every 5 seconds
+    if(!(count%5)){
+        alpha_cps /= 12;
+        beta_cps /= 12;
+        gamma_cps /= 12;
+        unknown_cps /= 12;
     }
     count++;
 
