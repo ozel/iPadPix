@@ -1,18 +1,16 @@
-/*
- Copyright (C) 2014 Apple Inc. All Rights Reserved.
- See LICENSE.txt for this sample’s licensing information
- 
- Abstract:
- 
-  Camera preview.
-  
- */
+//
+//  PreviewView.h
+//  iPadPix
+//
+//  Copyright (c) 2014 Oliver Keller. All rights reserved.
+//
 
-#import "AAPLPreviewView.h"
+
+#import "PreviewView.h"
 #import "CameraFocusSquare.h"
 #import <AVFoundation/AVFoundation.h>
 
-@implementation AAPLPreviewView
+@implementation PreviewView
 
 
 
@@ -37,7 +35,7 @@
     CGPoint touchPoint = [touch locationInView:touch.view];
     //[self focus:touchPoint];
 
-    if ([[touch view] isKindOfClass:[AAPLPreviewView class]])
+    if ([[touch view] isKindOfClass:[PreviewView class]])
     {
         //focusPOI = touchPoint;
         [[NSNotificationCenter defaultCenter]

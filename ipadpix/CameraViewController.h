@@ -1,12 +1,9 @@
-/*
- Copyright (C) 2014 Apple Inc. All Rights Reserved.
- See LICENSE.txt for this sample’s licensing information
- 
- Abstract:
- 
-  Control of camera functions.
-  
-*/
+//
+//  CameraViewController.h
+//  iPadPix
+//
+//  Copyright (c) 2016 Oliver Keller. All rights reserved.
+//
 
 @import UIKit;
 @import SpriteKit;
@@ -23,7 +20,7 @@ CALayer * fpFrame;
 BOOL demo_mode;
 BOOL record_mode;
 
-@interface AAPLCameraViewController : UIViewController
+@interface CameraViewController : UIViewController
 
 - (SKScene *)unarchiveFromFile:(NSString *)file;
 

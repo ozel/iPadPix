@@ -3,7 +3,7 @@
 //  iPadPix
 //
 //  Created by Oliver Keller on 22.09.14.
-//  Copyright (c) 2014 Apple Inc. All rights reserved.
+//  Copyright (c) 2014 Oliver Keller. All rights reserved.
 //
 
 #import <SpriteKit/SpriteKit.h>

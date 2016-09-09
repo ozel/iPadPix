@@ -7,16 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B854754319A2399C00289564 /* AAPLAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B854753519A2399C00289564 /* AAPLAppDelegate.m */; };
-		B854754419A2399C00289564 /* AAPLCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B854753719A2399C00289564 /* AAPLCameraViewController.m */; };
-		B854754519A2399C00289564 /* AAPLPreviewView.m in Sources */ = {isa = PBXBuildFile; fileRef = B854753919A2399C00289564 /* AAPLPreviewView.m */; };
+		B854754319A2399C00289564 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B854753519A2399C00289564 /* AppDelegate.m */; };
+		B854754419A2399C00289564 /* CameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B854753719A2399C00289564 /* CameraViewController.m */; };
+		B854754519A2399C00289564 /* PreviewView.m in Sources */ = {isa = PBXBuildFile; fileRef = B854753919A2399C00289564 /* PreviewView.m */; };
 		B854754619A2399C00289564 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B854753A19A2399C00289564 /* Main.storyboard */; };
 		B854754719A2399C00289564 /* CameraFocusSquare.m in Sources */ = {isa = PBXBuildFile; fileRef = B854753D19A2399C00289564 /* CameraFocusSquare.m */; };
 		B854754819A2399C00289564 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B854753E19A2399C00289564 /* InfoPlist.strings */; };
 		B854754919A2399C00289564 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B854754019A2399C00289564 /* Images.xcassets */; };
 		B854754B19A2399C00289564 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = B854754219A2399C00289564 /* main.m */; };
-		B854776919A23ACA00289564 /* GCDAsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = B854768919A23AC900289564 /* GCDAsyncSocket.m */; };
-		B854776A19A23ACA00289564 /* GCDAsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = B854768B19A23AC900289564 /* GCDAsyncUdpSocket.m */; };
 		B854782519A23CC600289564 /* 10_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854781B19A23CC600289564 /* 10_.png */; };
 		B854782619A23CC600289564 /* 1_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854781C19A23CC600289564 /* 1_.png */; };
 		B854782719A23CC600289564 /* 2_.png in Resources */ = {isa = PBXBuildFile; fileRef = B854781D19A23CC600289564 /* 2_.png */; };
@@ -48,12 +46,12 @@
 		40A2011C2FAAE72AE0FBC5A6 /* Pods_iPadPix.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iPadPix.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		42DE61DAE4AAC2BFB564DAFB /* Pods-iPadPix.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iPadPix.debug.xcconfig"; path = "Pods/Target Support Files/Pods-iPadPix/Pods-iPadPix.debug.xcconfig"; sourceTree = "<group>"; };
 		B0DFE0FD6C56454809A9C588 /* Pods-iPadPix.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iPadPix.release.xcconfig"; path = "Pods/Target Support Files/Pods-iPadPix/Pods-iPadPix.release.xcconfig"; sourceTree = "<group>"; };
-		B854753419A2399C00289564 /* AAPLAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AAPLAppDelegate.h; sourceTree = "<group>"; };
-		B854753519A2399C00289564 /* AAPLAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AAPLAppDelegate.m; sourceTree = "<group>"; };
-		B854753619A2399C00289564 /* AAPLCameraViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AAPLCameraViewController.h; sourceTree = "<group>"; };
-		B854753719A2399C00289564 /* AAPLCameraViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AAPLCameraViewController.m; sourceTree = "<group>"; };
-		B854753819A2399C00289564 /* AAPLPreviewView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AAPLPreviewView.h; sourceTree = "<group>"; };
-		B854753919A2399C00289564 /* AAPLPreviewView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AAPLPreviewView.m; sourceTree = "<group>"; };
+		B854753419A2399C00289564 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		B854753519A2399C00289564 /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		B854753619A2399C00289564 /* CameraViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CameraViewController.h; sourceTree = "<group>"; };
+		B854753719A2399C00289564 /* CameraViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CameraViewController.m; sourceTree = "<group>"; };
+		B854753819A2399C00289564 /* PreviewView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PreviewView.h; sourceTree = "<group>"; };
+		B854753919A2399C00289564 /* PreviewView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PreviewView.m; sourceTree = "<group>"; };
 		B854753B19A2399C00289564 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		B854753C19A2399C00289564 /* CameraFocusSquare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CameraFocusSquare.h; sourceTree = "<group>"; };
 		B854753D19A2399C00289564 /* CameraFocusSquare.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CameraFocusSquare.m; sourceTree = "<group>"; };
@@ -61,10 +59,6 @@
 		B854754019A2399C00289564 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		B854754119A2399C00289564 /* iPadPix-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPadPix-Info.plist"; sourceTree = "<group>"; };
 		B854754219A2399C00289564 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		B854768819A23AC900289564 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDAsyncSocket.h; sourceTree = "<group>"; };
-		B854768919A23AC900289564 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncSocket.m; sourceTree = "<group>"; };
-		B854768A19A23AC900289564 /* GCDAsyncUdpSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDAsyncUdpSocket.h; sourceTree = "<group>"; };
-		B854768B19A23AC900289564 /* GCDAsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncUdpSocket.m; sourceTree = "<group>"; };
 		B854781B19A23CC600289564 /* 10_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 10_.png; sourceTree = "<group>"; };
 		B854781C19A23CC600289564 /* 1_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 1_.png; sourceTree = "<group>"; };
 		B854781D19A23CC600289564 /* 2_.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 2_.png; sourceTree = "<group>"; };
@@ -138,7 +132,6 @@
 			children = (
 				B8F30AFD19A631A70007B8C2 /* CocoaLumberjack */,
 				B854782F19A23E6E00289564 /* README.md */,
-				B854768619A23AC900289564 /* GCD */,
 				B854753319A2399C00289564 /* ipadpix */,
 				2F360BA317692C4700D9A404 /* Products */,
 				0C234470EA8FEA0328E90608 /* Pods */,
@@ -158,12 +151,12 @@
 			isa = PBXGroup;
 			children = (
 				B854781A19A23CC600289564 /* demo_hits */,
-				B854753419A2399C00289564 /* AAPLAppDelegate.h */,
-				B854753519A2399C00289564 /* AAPLAppDelegate.m */,
-				B854753619A2399C00289564 /* AAPLCameraViewController.h */,
-				B854753719A2399C00289564 /* AAPLCameraViewController.m */,
-				B854753819A2399C00289564 /* AAPLPreviewView.h */,
-				B854753919A2399C00289564 /* AAPLPreviewView.m */,
+				B854753419A2399C00289564 /* AppDelegate.h */,
+				B854753519A2399C00289564 /* AppDelegate.m */,
+				B854753619A2399C00289564 /* CameraViewController.h */,
+				B854753719A2399C00289564 /* CameraViewController.m */,
+				B854753819A2399C00289564 /* PreviewView.h */,
+				B854753919A2399C00289564 /* PreviewView.m */,
 				B8610FEE19D06D75007A4732 /* TPXClusterView.h */,
 				B8610FEF19D06D75007A4732 /* TPXClusterView.m */,
 				B8F30AFC19A4CA230007B8C2 /* TPXFrameBufferLayer.h */,
@@ -181,18 +174,6 @@
 				B89EC9EB19B0D81400185BB3 /* tpx_schema.json */,
 			);
 			path = ipadpix;
-			sourceTree = "<group>";
-		};
-		B854768619A23AC900289564 /* GCD */ = {
-			isa = PBXGroup;
-			children = (
-				B854768819A23AC900289564 /* GCDAsyncSocket.h */,
-				B854768919A23AC900289564 /* GCDAsyncSocket.m */,
-				B854768A19A23AC900289564 /* GCDAsyncUdpSocket.h */,
-				B854768B19A23AC900289564 /* GCDAsyncUdpSocket.m */,
-			);
-			name = GCD;
-			path = ../libraries/CocoaAsyncSocket/GCD;
 			sourceTree = "<group>";
 		};
 		B854781A19A23CC600289564 /* demo_hits */ = {
@@ -387,12 +368,11 @@
 			files = (
 				B8F30B1419A631A70007B8C2 /* DDLog.m in Sources */,
 				B8610FF019D06D75007A4732 /* TPXClusterView.m in Sources */,
-				B854776A19A23ACA00289564 /* GCDAsyncUdpSocket.m in Sources */,
 				B8F30B1719A631A70007B8C2 /* DDDispatchQueueLogFormatter.m in Sources */,
 				B8F30B1319A631A70007B8C2 /* DDFileLogger.m in Sources */,
 				B8F30B1819A631A70007B8C2 /* DDMultiFormatter.m in Sources */,
-				B854754519A2399C00289564 /* AAPLPreviewView.m in Sources */,
-				B854754319A2399C00289564 /* AAPLAppDelegate.m in Sources */,
+				B854754519A2399C00289564 /* PreviewView.m in Sources */,
+				B854754319A2399C00289564 /* AppDelegate.m in Sources */,
 				B854754719A2399C00289564 /* CameraFocusSquare.m in Sources */,
 				B8F30B1519A631A70007B8C2 /* DDTTYLogger.m in Sources */,
 				B8F30B1219A631A70007B8C2 /* DDASLLogger.m in Sources */,
@@ -401,8 +381,7 @@
 				B8F30B1619A631A70007B8C2 /* DDContextFilterLogFormatter.m in Sources */,
 				B8F30B1119A631A70007B8C2 /* DDAbstractDatabaseLogger.m in Sources */,
 				B8F30AFA19A4C9DB0007B8C2 /* TPXFrameBufferLayer.m in Sources */,
-				B854776919A23ACA00289564 /* GCDAsyncSocket.m in Sources */,
-				B854754419A2399C00289564 /* AAPLCameraViewController.m in Sources */,
+				B854754419A2399C00289564 /* CameraViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -507,6 +486,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				BUNDLE_LOADER = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -525,9 +505,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				BUNDLE_LOADER = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = "ipadpix/iPadPix-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				PRODUCT_NAME = iPadPix;

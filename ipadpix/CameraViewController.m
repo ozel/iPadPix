@@ -1,19 +1,16 @@
-/*
- Copyright (C) 2014 Apple Inc. All Rights Reserved.
- See LICENSE.txt for this sample’s licensing information
- 
- Abstract:
- 
-  Control of camera functions.
-  
- */
+//
+//  CameraViewController.m
+//  iPadPix
+//
+//  Copyright (c) 2016 Oliver Keller. All rights reserved.
+//
 
-#import "AAPLCameraViewController.h"
+#import "CameraViewController.h"
 
 #import <AVFoundation/AVFoundation.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <SpriteKit/SpriteKit.h>
-#import "AAPLPreviewView.h"
+#import "PreviewView.h"
 
 #import "GCDAsyncUdpSocket.h"
 #import "DDLog.h"
@@ -34,11 +31,11 @@ static void *FocusModeContext = &FocusModeContext;
 static void *LensPositionContext = &LensPositionContext;
 
 
-@interface AAPLCameraViewController () <AVCaptureFileOutputRecordingDelegate>{
+@interface CameraViewController () <AVCaptureFileOutputRecordingDelegate>{
     GCDAsyncUdpSocket *asyncSocket;
 }
 
-@property (nonatomic, weak) IBOutlet AAPLPreviewView *previewView;
+@property (nonatomic, weak) IBOutlet PreviewView *previewView;
 @property (nonatomic, weak) IBOutlet UIButton *stillButton;
 
 @property (nonatomic, strong) NSArray *focusModes;
@@ -64,7 +61,7 @@ static void *LensPositionContext = &LensPositionContext;
 
 @end
 
-@implementation AAPLCameraViewController
+@implementation CameraViewController
 
 static UIColor* CONTROL_NORMAL_COLOR = nil;
 static UIColor* CONTROL_HIGHLIGHT_COLOR = nil;
@@ -168,7 +165,7 @@ bool raw_tot = true;
 		
         if(!TARGET_IPHONE_SIMULATOR){
             
-            AVCaptureDevice *videoDevice = [AAPLCameraViewController deviceWithMediaType:AVMediaTypeVideo preferringPosition:AVCaptureDevicePositionBack];
+            AVCaptureDevice *videoDevice = [CameraViewController deviceWithMediaType:AVMediaTypeVideo preferringPosition:AVCaptureDevicePositionBack];
             AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
             
             if (error)
@@ -855,10 +852,10 @@ bool raw_tot = true;
                                              selector:@selector(handleFPtimer:)
                                                  name:@"UIApplicationDidRefocusEvent" object:nil];
 	
-	__weak AAPLCameraViewController *weakSelf = self;
+	__weak CameraViewController *weakSelf = self;
     if(!TARGET_IPHONE_SIMULATOR){
         [self setRuntimeErrorHandlingObserver:[[NSNotificationCenter defaultCenter] addObserverForName:AVCaptureSessionRuntimeErrorNotification object:[self session] queue:nil usingBlock:^(NSNotification *note) {
-            AAPLCameraViewController *strongSelf = weakSelf;
+            CameraViewController *strongSelf = weakSelf;
             dispatch_async([strongSelf sessionQueue], ^{
                 // Manually restart the session since it must have been stopped due to an error
                 [[strongSelf session] startRunning];
@@ -1204,7 +1201,7 @@ withFilterContext:(id)filterContext
         skView.showsFPS = NO;
         skView.showsNodeCount = NO;
         if(record_mode){
-            NSURL * prefix = [AAPLCameraViewController applicationDataDirectory];
+            NSURL * prefix = [CameraViewController applicationDataDirectory];
 //            prefix = [prefix URLByAppendingPathComponent:@"demo_clusters"];
             long int count = [[[NSUserDefaults standardUserDefaults] valueForKey:@"demo_cluster_count"] integerValue];
             count++;
@@ -1631,7 +1628,7 @@ withFilterContext:(id)filterContext
 //    NSLog(@"demo timer fired");
     
     //load previously saved clusters
-    NSURL * prefix = [AAPLCameraViewController applicationDataDirectory];
+    NSURL * prefix = [CameraViewController applicationDataDirectory];
 //    prefix = [prefix URLByAppendingPathComponent:@"demo_clusters"];
     
     unsigned int clusters = arc4random_uniform(2); //randomly display 0 to 4 clusters in one frame

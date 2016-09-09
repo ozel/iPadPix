@@ -1,3 +1,5 @@
+//copy from https://github.com/alessani/ColorConverter 
+
 static void HSL2RGB(float h, float s, float l, float* outR, float* outG, float* outB)
 {
 	float			temp1,
