@@ -261,6 +261,7 @@
 				TargetAttributes = {
 					2F360BA117692C4700D9A404 = {
 						DevelopmentTeam = V5WJKFTQN5;
+						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.InterAppAudio = {
 								enabled = 0;
@@ -489,6 +490,7 @@
 				BUNDLE_LOADER = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = V5WJKFTQN5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "ipadpix/iPadPix-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
@@ -508,6 +510,7 @@
 				BUNDLE_LOADER = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = V5WJKFTQN5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = "ipadpix/iPadPix-Info.plist";

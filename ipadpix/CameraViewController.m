@@ -58,6 +58,10 @@ static void *LensPositionContext = &LensPositionContext;
 @property (nonatomic) BOOL lockInterfaceRotation;
 @property (nonatomic) id runtimeErrorHandlingObserver;
 @property (nonatomic, strong) dispatch_queue_t networkQueue;
+@property (nonatomic, strong) NSMutableArray *alphas_fifo;
+@property (nonatomic, strong) NSMutableArray *betas_fifo;
+@property (nonatomic, strong) NSMutableArray *gammas_fifo;
+@property (nonatomic, strong) NSMutableArray*unknown_fifo;
 
 @end
 
@@ -73,6 +77,8 @@ CGPoint defaultFocusPOI;
 //cps display
 SKLabelNode *alpha_ctr, *beta_ctr, *gamma_ctr, *unknown_ctr;
 NSUInteger alpha_cnt, beta_cnt,gamma_cnt, unknown_cnt;
+
+
 float alpha_cps, beta_cps, gamma_cps, unknown_cps;
 
 bool raw_tot = true;
@@ -81,6 +87,7 @@ bool raw_tot = true;
 @synthesize fBuffer;
 @synthesize overlayImageView;
 @synthesize fbArray;
+@synthesize counter_fifos;
 
 + (id)JSONObjectFromBundleResource:(NSString *)resource {
     NSString *path = [[NSBundle bundleForClass:self] pathForResource:resource ofType:@"json"];
@@ -483,10 +490,21 @@ bool raw_tot = true;
     unknown_ctr.position = CGPointMake(380, 0);
     [cps_label addChild:unknown_ctr];
 
+    NSArray *dataset = [[NSArray alloc] initWithArray: [[NSArray alloc] initWithObjects:@(0),@(0), nil ]];
+    
+    
+    NSMutableArray *alphas_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    NSMutableArray *betas_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    NSMutableArray *gammas_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    NSMutableArray *unknown_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    
+    
+    counter_fifos = [[NSMutableArray alloc] initWithObjects: alphas_fifo, betas_fifo, gammas_fifo, unknown_fifo, nil];   //[[NSMutableArray alloc] initWithObjects: alphas_fifo, betas_fifo, gammas_fifo, unknown_fifo, nil];
+
     NSTimer *cpsTimer = [NSTimer scheduledTimerWithTimeInterval:1
                                                  target:self
                                                selector:@selector(handleCpsTimer:)
-                                               userInfo:nil
+                                               userInfo:counter_fifos
                                                         repeats:YES];
     
     
@@ -543,7 +561,7 @@ bool raw_tot = true;
 }
 
 - (void)respondToTwoTap:(UIPanGestureRecognizer *)recognizer {
-    if (recognizer.state == UIGestureRecognizerStateEnded){
+ /*   if (recognizer.state == UIGestureRecognizerStateEnded){
         //toggle between demo on and off
         if (demo_mode){
             [demoTimer invalidate];
@@ -563,9 +581,21 @@ bool raw_tot = true;
             
             skView.showsFPS = YES;
             skView.showsNodeCount = YES;
-
+            
         }
     }
+  */
+    //reset fifo counters
+    NSArray *dataset = [[NSArray alloc] initWithArray: [[NSArray alloc] initWithObjects:@(0),@(0), nil ]];
+    NSMutableArray *alphas_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    NSMutableArray *betas_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    NSMutableArray *gammas_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    NSMutableArray *unknown_fifo = [[NSMutableArray alloc] initWithObjects:dataset, nil];
+    alpha_cnt = 0;
+    beta_cnt = 0;
+    gamma_cnt = 0;
+    unknown_cnt = 0;
+    counter_fifos = [[NSMutableArray alloc] initWithObjects: alphas_fifo, betas_fifo, gammas_fifo, unknown_fifo, nil];
 }
 
 - (void)respondToFiveTap:(UIPanGestureRecognizer *)recognizer {
@@ -1656,41 +1686,71 @@ withFilterContext:(id)filterContext
 }
 
 - (void)handleCpsTimer:(NSTimer *) timer {
-    static int count;
-    
-    alpha_cps+=alpha_cnt;
-    alpha_cnt=0; //simulate low pass behaviour on this counter
+    static unsigned long long count = 0;
+    //NSUInteger count = 0;
+    NSMutableArray *fifos = [timer userInfo];
 
-    beta_cps+=beta_cnt;
-    beta_cnt=0; //simulate low pass behaviour on this counter
+    int i = 0;
+    for (id fifo in counter_fifos){
+        NSUInteger new_counts = 0;
+        NSString *label;
+        SKLabelNode *text;
+        switch (i) {
+            case 0:
+                new_counts = alpha_cnt;
+                label = @"\u03B1 %1.f";
+                text = alpha_ctr;
+                alpha_cnt = 0;
+                //NSLog(@"alpha");
+                break;
+            case 1:
+                new_counts = beta_cnt;
+                label = @"\u03B2 %1.f";
+                text = beta_ctr;
+                beta_cnt = 0;
+                //NSLog(@"beta");
+                break;
+            case 2:
+                new_counts = gamma_cnt;
+                label = @"\u03B3 %1.f";
+                text = gamma_ctr;
+                gamma_cnt = 0;
+                //NSLog(@"gamma");
+                break;
+            case 3:
+                new_counts = unknown_cnt;
+                label = @"? %1.f";
+                text = unknown_ctr;
+                unknown_cnt = 0;
+                //NSLog(@"unknown");
+                break;
+            default:
+                break;
+        }
+        i++;
+        NSArray *dataset = [[NSArray alloc] initWithArray: [[NSArray alloc] initWithObjects:@(count), @(new_counts), nil]]; //[NSArray arrayWithObjects: [NSNumber numberWithLongLong:count], new_counts, nil];
+        //NSLog(@"%llul %lul %lul", count, new_counts, unknown_cnt);
+        [fifo insertObject:dataset atIndex:0];
 
-    
-    gamma_cps+=gamma_cnt;
-    gamma_cnt=0; //simulate low pass behaviour on this counter
-    
-    unknown_cps+=unknown_cnt;
-    unknown_cnt=0; //simulate low pass behaviour on this counter
-    
-    
-    //update display every 2 seconds
-    if(!(count%2)){
-        alpha_ctr.text = [NSString stringWithFormat:@"\u03B1 %.1f", alpha_cps];
-        beta_ctr.text = [NSString stringWithFormat:@"\u03B2 %.1f", beta_cps];
-        gamma_ctr.text = [NSString stringWithFormat:@"\u03B3 %.1f", gamma_cps];
-        unknown_ctr.text = [NSString stringWithFormat:@"? %.1f", unknown_cps];
+
+        //delete counts that are older than 1 minute
+        NSArray *oldest_dataset = [fifo lastObject];
+        unsigned long long delta = count - [[oldest_dataset objectAtIndex: 0] intValue];
+        if ( delta >= 60) {
+            //delete old counts
+            [fifo removeObjectAtIndex:[fifo count] - 1];
+        }
+        float counts = 0;
+        for (id fifo_dataset in fifo){
+            counts += (float) [[fifo_dataset objectAtIndex:1] intValue];
+            //reset counter
+            //[dataset replaceObjectAtIndex:0 withObject:[NSNumber numberWithFloat:0.0]];
+        }
+        //counts /= 60.0 * floor(delta / 60));
+        text.text = [NSString stringWithFormat:label, counts];
     }
-    
-    //average every 5 seconds
-    if(!(count%5)){
-        alpha_cps /= 12;
-        beta_cps /= 12;
-        gamma_cps /= 12;
-        unknown_cps /= 12;
-    }
+    //advance count rate counter
     count++;
-
-    
-//    NSLog(@"cps timer finished");
 }
 
 + (NSURL*)applicationDataDirectory {

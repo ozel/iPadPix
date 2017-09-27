@@ -31,7 +31,7 @@ BOOL record_mode;
 @property (nonatomic) TPXFrameBufferLayer * fBuffer;
 @property (nonatomic) NSMutableArray * fbArray;
 @property (nonatomic) UIImageView * overlayImageView;
-
+@property (nonatomic, strong) NSMutableArray *counter_fifos;
 
 
 @end
