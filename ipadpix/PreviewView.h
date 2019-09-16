@@ -10,7 +10,6 @@
 
 @import UIKit;
 
-CameraFocusSquare *camFocus;
 
 
 @class AVCaptureSession;

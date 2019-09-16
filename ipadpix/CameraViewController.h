@@ -11,15 +11,6 @@
 #import "TPXFrameBufferLayer.h"
 
 
-
-CGPoint focusPOI;
-UIView * fPview;
-SKView * skView;
-TPXClusterScene * scene;
-CALayer * fpFrame;
-BOOL demo_mode;
-BOOL record_mode;
-
 @interface CameraViewController : UIViewController
 
 - (SKScene *)unarchiveFromFile:(NSString *)file;

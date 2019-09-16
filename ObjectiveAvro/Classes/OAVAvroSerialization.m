@@ -7,7 +7,7 @@
 //
 
 #import "OAVAvroSerialization.h"
-#import <avro.h>
+#import "avro.h"
 
 @interface OAVAvroSerialization ()
 

@@ -10,6 +10,9 @@
 #import "CameraFocusSquare.h"
 #import <AVFoundation/AVFoundation.h>
 
+CameraFocusSquare *camFocus;
+
+
 @implementation PreviewView
 
 
